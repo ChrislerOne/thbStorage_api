@@ -14,7 +14,6 @@ from pathlib import Path
 from os.path import join, dirname
 from dotenv import load_dotenv
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 
@@ -31,7 +30,7 @@ SECRET_KEY = 'django-insecure-qs^9muoi8d82_lexj#o8)(73qip#prkiod!0(%x!m9^9@r6m9+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -43,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'backend',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -130,3 +130,5 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+MEDIA_ROOT = 'D:/_dump'
