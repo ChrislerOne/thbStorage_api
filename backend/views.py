@@ -18,6 +18,8 @@ class FileViewSet(viewsets.ModelViewSet):
     parser_class = (MultiPartParser,)
 
     def perform_create(self, serializer):
+        #TODO: Abfrage nach verfügbaren Speicherplatz für User
+
         upload = self.request.FILES['content']
         upload_data = self.request.data
 
@@ -33,6 +35,7 @@ class FileViewSet(viewsets.ModelViewSet):
         file.directory = directory
         # TODO: Users Account erhalten und dementsprechend eintragen
         file.owner = user
+
         if file.location != 'null':
             file.content.name = str(user.get_username()) + '/' + file.location + '/' + file.name
         else:
