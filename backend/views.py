@@ -3,9 +3,12 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import BasicAuthentication
 from backend.serializer import FileSerializer
 from backend.models import FileModel, DirectoryModel
 from django.core.files.storage import FileSystemStorage
+from backend.firebase import init
 
 
 # Create your views here.
@@ -17,11 +20,17 @@ class FileViewSet(viewsets.ModelViewSet):
     serializer_class = FileSerializer
     parser_class = (MultiPartParser,)
 
+    # To set needed permissions uncomment this
+    # permission_classes = [IsAuthenticated]
+
     def perform_create(self, serializer):
-        #TODO: Abfrage nach verfügbaren Speicherplatz für User
+        # TODO: Abfrage nach verfügbaren Speicherplatz für User
 
         upload = self.request.FILES['content']
         upload_data = self.request.data
+        # To get token and verify it uncomment this
+        # auth = self.request.auth
+        # uid = init(auth)
 
         directory = DirectoryModel.objects.get(pk=1)
         user = User.objects.get(pk=1)
@@ -35,6 +44,7 @@ class FileViewSet(viewsets.ModelViewSet):
         file.directory = directory
         # TODO: Users Account erhalten und dementsprechend eintragen
         file.owner = user
+        # file.owner = upload_data['user']
 
         if file.location != 'null':
             file.content.name = str(user.get_username()) + '/' + file.location + '/' + file.name

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="157.90.155.130" uuid="f3ae6779-fad0-4ffe-99ea-e88297675fad">
+    <data-source source="LOCAL" name="thbstorage@157.90.155.130" uuid="c69b7f5d-9062-4b91-8fc2-d1ad0b6ece64">
       <driver-ref>mariadb</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mariadb://157.90.155.130:3306</jdbc-url>
+      <jdbc-url>jdbc:mariadb://157.90.155.130:3306/thbstorage</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
