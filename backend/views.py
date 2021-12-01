@@ -1,14 +1,28 @@
+import random
+
+import firebase_admin.auth
 from django.contrib.auth.models import User
-from django.shortcuts import render
+from rest_framework.authtoken.models import Token
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import BasicAuthentication
 from backend.serializer import FileSerializer
-from backend.models import FileModel, DirectoryModel
-from django.core.files.storage import FileSystemStorage
-from backend.firebase import init
+from backend.models import FileModel, DirectoryModel, CustomUIDModel
+from backend.firebase import get_user, get_uid
+
+
+def create_user_if_not_existent(uid: str):
+    firebase_user = get_user(uid)
+    if CustomUIDModel.objects.filter(uid=firebase_user.uid):
+        uid_obj = CustomUIDModel.objects.get(uid=firebase_user.uid)
+        user = uid_obj.user
+    else:
+        # User Object neccesary for token creation
+        user = User.objects.create(email=firebase_user.email,
+                                   password=str(str(random.randbytes(14))))
+        CustomUIDModel.objects.create(uid=firebase_user.uid, user=user)
+    return user
 
 
 # Create your views here.
@@ -19,21 +33,18 @@ class FileViewSet(viewsets.ModelViewSet):
     queryset = FileModel.objects.all()
     serializer_class = FileSerializer
     parser_class = (MultiPartParser,)
-
-    # To set needed permissions uncomment this
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         # TODO: Abfrage nach verfügbaren Speicherplatz für User
 
         upload = self.request.FILES['content']
         upload_data = self.request.data
-        # To get token and verify it uncomment this
-        # auth = self.request.auth
-        # uid = init(auth)
+
+        uid = get_uid(upload_data['id_token'])
+        user = create_user_if_not_existent(uid)
 
         directory = DirectoryModel.objects.get(pk=1)
-        user = User.objects.get(pk=1)
 
         file = FileModel()
         file.name = upload_data['name']
@@ -47,9 +58,9 @@ class FileViewSet(viewsets.ModelViewSet):
         # file.owner = upload_data['user']
 
         if file.location != 'null':
-            file.content.name = str(user.get_username()) + '/' + file.location + '/' + file.name
+            file.content.name = str(uid) + '/' + file.location + '/' + file.name
         else:
-            file.content.name = str(user.get_username()) + '/' + file.name
+            file.content.name = str(uid) + '/' + file.name
 
         serializer = FileSerializer(data=file.__dict__)
         if serializer.is_valid():

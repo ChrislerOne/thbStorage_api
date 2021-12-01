@@ -132,7 +132,7 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MEDIA_ROOT = 'D:/_dump'
+MEDIA_ROOT = os.environ.get("MEDIA_ROOT")
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':

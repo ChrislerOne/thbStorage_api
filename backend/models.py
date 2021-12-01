@@ -22,6 +22,11 @@ class FileModel(models.Model):
     owner = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     # TODO: Downloadpath
 
+
+class CustomUIDModel(models.Model):
+    uid = models.CharField(max_length=500)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
 # class CustomUserModel()
 # from django.conf import settings
 # from django.db.models.signals import post_save
