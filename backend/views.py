@@ -25,7 +25,7 @@ def create_user_if_not_existent(uid: str):
         user = uid_obj.user
     else:
         # User Object neccesary for token creation
-        user = User.objects.create(email=firebase_user.email,
+        user = User.objects.create(email=firebase_user.email, username=firebase_user.email,
                                    password=str(str(random.randbytes(14))))
         CustomUIDModel.objects.create(uid=firebase_user.uid, user=user)
     return user
