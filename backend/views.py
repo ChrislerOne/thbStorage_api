@@ -1,15 +1,21 @@
+import json
 import random
 
-import firebase_admin.auth
+import django.core.exceptions
+import rest_framework.exceptions
 from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
+from django.core import serializers
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
+
+import backend.models
 from backend.serializer import FileSerializer
 from backend.models import FileModel, DirectoryModel, CustomUIDModel
 from backend.firebase import get_user, get_uid
+from rest_framework.exceptions import *
+from django.core.exceptions import *
 
 
 def create_user_if_not_existent(uid: str):
@@ -33,6 +39,7 @@ class FileViewSet(viewsets.ModelViewSet):
     queryset = FileModel.objects.all()
     serializer_class = FileSerializer
     parser_class = (MultiPartParser,)
+
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
@@ -44,6 +51,7 @@ class FileViewSet(viewsets.ModelViewSet):
         uid = get_uid(upload_data['id_token'])
         user = create_user_if_not_existent(uid)
 
+        # TODO: Directory erstellen, falls nicht vorhanden und dann setzen.
         directory = DirectoryModel.objects.get(pk=1)
 
         file = FileModel()
@@ -70,4 +78,15 @@ class FileViewSet(viewsets.ModelViewSet):
             print(file.__dict__)
             return Response(serializer.errors, status=400)
 
-        return Response(status=204)
+        return Response(status=201)
+
+    def list(self, request, *args, **kwargs):
+        try:
+            id_token = request.GET.get("id_token", '')
+            uid = get_uid(id_token)
+            user = CustomUIDModel.objects.filter(uid=uid).get().user
+            all_files = FileModel.objects.filter(owner_id=user.pk)
+            response = serializers.serialize('json', all_files.all())
+            return Response(data=response, status=status.HTTP_200_OK)
+        except:
+            return Response(data=[], status=status.HTTP_200_OK)
