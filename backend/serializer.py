@@ -17,3 +17,6 @@ class DirectorySerializer(serializers.ModelSerializer):
     class Meta:
         model = DirectoryModel
         fields = ['name']
+
+
+
