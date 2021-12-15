@@ -1,4 +1,5 @@
 import json
+import os
 import random
 
 import django.core.exceptions
@@ -6,16 +7,20 @@ import rest_framework.exceptions
 from django.contrib.auth.models import User
 from django.core import serializers
 from rest_framework import viewsets
+from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 
 import backend.models
-from backend.serializer import FileSerializer
-from backend.models import FileModel, DirectoryModel, CustomUIDModel
+from backend.serializer import FileSerializer, FileNewSerializer
+from backend.models import FileModel, DirectoryModel, CustomUIDModel, FileNewModel
 from backend.firebase import get_user, get_uid
 from rest_framework.exceptions import *
 from django.core.exceptions import *
+from django.http import FileResponse, HttpResponse
+
+from thbStorage_API import settings
 
 
 def create_user_if_not_existent(uid: str):
@@ -42,52 +47,177 @@ class FileViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        # TODO: Abfrage nach verfügbaren Speicherplatz für User
+    # def perform_create(self, serializer):
+    #     # TODO: Abfrage nach verfügbaren Speicherplatz für User
+    #
+    #     upload = self.request.FILES['content']
+    #     upload_data = self.request.data
+    #
+    #     uid = get_uid(upload_data['id_token'])
+    #     user = create_user_if_not_existent(uid)
+    #
+    #     # TODO: Directory erstellen, falls nicht vorhanden und dann setzen.
+    #     directory = DirectoryModel.objects.get(pk=1)
+    #
+    #     file = FileModel()
+    #     file.name = upload_data['name']
+    #     file.location = upload_data['location']
+    #     file.content = upload
+    #     file.checksum = ''
+    #     # TODO: get directory of user and match it with request
+    #     file.directory = directory
+    #     # TODO: Users Account erhalten und dementsprechend eintragen
+    #     file.owner = user
+    #     # file.owner = upload_data['user']
+    #
+    #     if file.location != 'null':
+    #         file.content.name = str(uid) + '/' + file.location + '/' + file.name
+    #     else:
+    #         file.content.name = str(uid) + '/' + file.name
+    #
+    #     serializer = FileSerializer(data=file.__dict__)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         print(serializer.errors)
+    #         print(file.__dict__)
+    #         return Response(serializer.errors, status=400)
+    #
+    #     return Response(status=201)
 
-        upload = self.request.FILES['content']
-        upload_data = self.request.data
+    # def list(self, request, *args, **kwargs):
+    #     id_token = request.GET.get("id_token", '')
+    #     uid = get_uid(id_token)
+    #     if uid is None:
+    #         return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    #
+    #     user = CustomUIDModel.objects.filter(uid=uid).get().user
+    #     all_files = FileModel.objects.filter(owner_id=user.pk)
+    #     response = serializers.serialize('json', all_files)
+    #     response = json.loads(response)
+    #     for d in response:
+    #         del d['model']
+    #         del d['pk']
+    #     return Response(data=response, status=status.HTTP_200_OK)
 
-        uid = get_uid(upload_data['id_token'])
-        user = create_user_if_not_existent(uid)
 
-        # TODO: Directory erstellen, falls nicht vorhanden und dann setzen.
-        directory = DirectoryModel.objects.get(pk=1)
-
-        file = FileModel()
-        file.name = upload_data['name']
-        file.location = upload_data['location']
-        file.content = upload
-        file.checksum = ''
-        # TODO: get directory of user and match it with request
-        file.directory = directory
-        # TODO: Users Account erhalten und dementsprechend eintragen
-        file.owner = user
-        # file.owner = upload_data['user']
-
-        if file.location != 'null':
-            file.content.name = str(uid) + '/' + file.location + '/' + file.name
+def jsonFromPath(path, uid, user):
+    # d = {'name': os.path.basename(path)}
+    d = {}
+    if os.path.isdir(path):
+        d['type'] = "directory"
+        location = os.path.dirname(path)
+        location = location.replace(f'{uid}', '')
+        location = location.replace(f'{settings.MEDIA_ROOT}\\{uid}', '')
+        location = location.replace(f'{settings.MEDIA_ROOT}', '')
+        location = location.replace('\\', '/')
+        location = location.replace('//', '/')
+        if location == '':
+            location = '/'
+        d['location'] = location
+        d['children'] = [jsonFromPath(os.path.join(path, x), uid, user) for x in os.listdir(path)]
+    else:
+        d['type'] = "file"
+        location = os.path.dirname(path).replace(f'{settings.MEDIA_ROOT}\\{uid}', '')
+        location = location.replace('\\', '/')
+        if location == '':
+            location = '/'
+        d['location'] = location
+        if location == '/':
+            filepath = f'/{os.path.basename(path)}'
         else:
-            file.content.name = str(uid) + '/' + file.name
+            filepath = f'{location}/{os.path.basename(path)}'
+        temp = FileNewModel.objects.filter(owner_id=user.pk, content=f'{uid}{filepath}').first()
+        # print(temp.checksum)
+        d['path'] = filepath
+        d['checksum'] = temp.checksum
+        d['last_changed'] = temp.last_changed
+        d['isPublic'] = temp.isPublic
+    return d
 
-        serializer = FileSerializer(data=file.__dict__)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            print(serializer.errors)
-            print(file.__dict__)
-            return Response(serializer.errors, status=400)
 
-        return Response(status=201)
+@api_view(['GET'])
+def filesList(request):
+    id_token = request.GET.get("id_token", '')
+    uid = get_uid(id_token)
+    if uid is None:
+        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
 
-    def list(self, request, *args, **kwargs):
-        try:
-            id_token = request.GET.get("id_token", '')
-            uid = get_uid(id_token)
-            user = CustomUIDModel.objects.filter(uid=uid).get().user
-            all_files = FileModel.objects.filter(owner_id=user.pk)
-            response = serializers.serialize('json', all_files.all())
-            return Response(data=response, status=status.HTTP_200_OK)
-        except:
-            return Response(data=[], status=status.HTTP_200_OK)
+    user = CustomUIDModel.objects.filter(uid=uid).get().user
 
+    json_data = jsonFromPath(os.path.join(settings.STATIC_ROOT, settings.MEDIA_ROOT, uid), uid, user)
+
+    return Response(data=json_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def getFile(request):
+    id_token = request.GET.get("id_token", '')
+    uid = get_uid(id_token)
+    if uid is None:
+        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    filepath = ''
+    try:
+        filepath = request.data['filepath']
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = CustomUIDModel.objects.filter(uid=uid).get().user
+
+    temp = FileNewModel.objects.filter(owner_id=user.pk, content=f'{uid}{filepath}').first()
+    file = open(f'{settings.MEDIA_ROOT}/{uid}{filepath}', 'r')
+    file.close()
+    filename = os.path.basename(file.name)
+    print(temp.fileName)
+    json_data = {
+        'fileName': filename,
+        'location': file.name.replace(f'{settings.MEDIA_ROOT}/{uid}', ''),
+        'content': file.name,
+        'checksum': temp.checksum,
+        'last_changed': temp.last_changed,
+        'isPublic': temp.isPublic,
+    }
+    return Response(data=json_data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def uploadFile(request):
+    # TODO: Abfrage nach verfügbaren Speicherplatz für User
+
+    upload = request.FILES['content']
+    upload_data = request.data
+
+    id_token = request.GET.get("id_token", '')
+    uid = get_uid(id_token)
+    if uid is None:
+        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    user = create_user_if_not_existent(uid)
+
+    # TODO: Directory erstellen, falls nicht vorhanden und dann setzen.
+
+    fileNew = FileNewModel()
+    fileNew.fileName = upload_data['name']
+    fileNew.location = upload_data['location']
+    fileNew.content = upload
+    fileNew.checksum = upload_data['checksum']
+
+    # TODO: get directory of user and match it with request
+
+    # TODO: Users Account erhalten und dementsprechend eintragen
+
+    fileNew.owner = user
+
+    if fileNew.location != 'null':
+        fileNew.content.name = str(uid) + '/' + fileNew.location + '/' + fileNew.fileName
+    else:
+        fileNew.content.name = str(uid) + '/' + fileNew.name
+
+    serializer = FileNewSerializer(data=fileNew.__dict__)
+    if serializer.is_valid():
+        serializer.save()
+    else:
+        print(serializer.errors)
+        print(fileNew.__dict__)
+        return Response(serializer.errors, status=400)
+
+    return Response(status=201)

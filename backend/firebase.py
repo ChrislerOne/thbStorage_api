@@ -8,9 +8,13 @@ backend = firebase_admin.initialize_app(cred, name='backend')
 
 
 def get_uid(id_token: str):
-    decoded_token = auth.verify_id_token(id_token)
-    uid = decoded_token['uid']
-    return uid
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        return uid
+    except:
+        pass
+
 
 
 def get_user(uid: str):

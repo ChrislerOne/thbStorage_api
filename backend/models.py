@@ -27,6 +27,17 @@ class CustomUIDModel(models.Model):
     uid = models.CharField(max_length=500)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+
+class FileNewModel(models.Model):
+    fileName = models.CharField(max_length=500)
+    location = models.CharField(blank=True, max_length=500, null=True, default='')
+    content = models.FileField()
+    checksum = models.CharField(max_length=64, null=True)
+    last_changed = models.DateTimeField(default=timezone.now())
+    isPublic = models.BooleanField(default=False)
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
+    # TODO: Downloadpath
+
 # class CustomUserModel()
 # from django.conf import settings
 # from django.db.models.signals import post_save
