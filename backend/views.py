@@ -214,7 +214,7 @@ def uploadFile(request):
 
     serializer = FileNewSerializer(data=fileNew.__dict__)
     if serializer.is_valid():
-        serializer.save()
+        fileNew.save()
     else:
         print(serializer.errors)
         print(fileNew.__dict__)
