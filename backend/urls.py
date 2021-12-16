@@ -13,6 +13,7 @@ urlpatterns = [
     path('files/', views.files_list),
     path('file/upload', views.upload_file),
     path('file', views.get_file),
+    path('file/specific', views.get_specific_file),
     path('filename/update', views.rename_filename),
     path('directory/create', views.create_directory),
     path('directory/update', views.rename_directory),
