@@ -110,11 +110,12 @@ def json_from_path(path, uid, user):
         d['type'] = "directory"
         d['location'] = path
         d['folderName'] = os.path.basename(path).replace(uid, '')
-        d['children'] = [json_from_path(os.path.join(path, x),uid, user) for x in os.listdir(absolute_path)]
+        d['children'] = [json_from_path(os.path.join(path, x), uid, user) for x in os.listdir(absolute_path)]
     elif os.path.isfile(absolute_path):
         # ansolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
         print(os.path.dirname(path))
-        temp = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(path), fileName=os.path.basename(path))
+        temp = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(path),
+                                        fileName=os.path.basename(path))
         try:
             d['type'] = "file"
             d['location'] = path
@@ -144,6 +145,19 @@ def files_list(request):
 
 
 @api_view(['GET'])
+def get_specific_file(request):
+    file = FileNewModel.objects.get(pk=51)
+
+    file_handle = file.content.open()
+    response = FileResponse(file_handle, status=status.HTTP_200_OK, filename='test')
+    response['Content-Length'] = file.content.size
+    response['X-Content-Name'] = file.checksum
+    response['Content-Disposition'] = 'attachment; filename="%s"' % file.content.name
+
+    return response
+
+
+@api_view(['GET'])
 def get_file(request):
     id_token = request.GET.get("id_token", '')
     uid = get_uid(id_token)
@@ -157,7 +171,7 @@ def get_file(request):
 
     user = CustomUIDModel.objects.filter(uid=uid).get().user
 
-    temp = FileNewModel.objects.filter(owner_id=user.pk, content=f'{uid}{filepath}').first()
+    temp = FileNewModel.objects.get(owner_id=user.pk, content=f'{uid}{filepath}')
     file = open(f'{settings.MEDIA_ROOT}/{uid}{filepath}', 'r')
     file.close()
     filename = os.path.basename(file.name)
