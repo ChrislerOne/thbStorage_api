@@ -104,37 +104,19 @@ class FileViewSet(viewsets.ModelViewSet):
 def json_from_path(path, uid, user):
     # d = {'name': os.path.basename(path)}
     d = {}
-
-    if os.path.isdir(path):
+    absolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
+    print(absolute_path)
+    if os.path.isdir(absolute_path):
         d['type'] = "directory"
-        location = os.path.dirname(path)
-        location = location.replace(f'{uid}', '')
-        location = location.replace(f'{settings.MEDIA_ROOT}\\{uid}', '')
-        location = location.replace(f'{settings.MEDIA_ROOT}', '')
-        location = location.replace('\\', '/')
-        location = location.replace('//', '/')
-        if location == '':
-            location = '/'
-        d['location'] = location
-        d['folderName'] = os.path.basename(path).replace(uid,'')
+        d['location'] = path
+        d['folderName'] = os.path.basename(path).replace(uid, '')
         d['children'] = [json_from_path(os.path.join(path, x), uid, user) for x in os.listdir(path)]
-    elif os.path.isfile(path):
-        location = os.path.dirname(path).replace(f'{settings.MEDIA_ROOT}/{uid}', '')
-        location = location.replace('\\', '/')
-        if location == '':
-            location = '/'
-        if location == '/':
-            filepath = f'/{os.path.basename(path)}'
-        else:
-            filepath = f'{location}/{os.path.basename(path)}'
-        print(f'1: {location}')
-        print(f'2: {os.path.basename(path)}')
-        print(f'3: {path}')
-        temp = FileNewModel.objects.get(owner_id=user.pk, location=location, fileName=os.path.basename(path))
+    elif os.path.isfile(absolute_path):
+        # ansolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
+        temp = FileNewModel.objects.get(owner_id=user.pk, location=path, fileName=os.path.basename(path))
         try:
             d['type'] = "file"
-            d['location'] = location
-            d['path'] = filepath
+            d['location'] = path
             d['checksum'] = temp.checksum
             d['last_changed'] = temp.last_changed
             d['isPublic'] = temp.isPublic
@@ -152,7 +134,7 @@ def files_list(request):
 
     user = CustomUIDModel.objects.filter(uid=uid).get().user
 
-    json_data = json_from_path(os.path.join(settings.STATIC_ROOT, settings.MEDIA_ROOT, uid), uid, user)
+    json_data = json_from_path('/', uid, user)
 
     if json_data is 'error':
         return Response(data={'status': 'Database error'}, status=status.HTTP_400_BAD_REQUEST)
@@ -263,6 +245,7 @@ def rename_filename(request):
 
     return Response(data={'status': 'updated'}, status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 def create_directory(request):
     id_token = request.GET.get("id_token", '')
@@ -284,6 +267,7 @@ def create_directory(request):
 
     return Response(status=status.HTTP_201_CREATED)
 
+
 @api_view(['GET'])
 def rename_directory(request):
     id_token = request.GET.get("id_token", '')
@@ -300,7 +284,7 @@ def rename_directory(request):
     new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}{new_name}'
 
     if os.path.exists(path):
-        os.rename(path,new_dir_path)
+        os.rename(path, new_dir_path)
     else:
         return Response(data={'status': 'directory not exists'}, status=status.HTTP_400_BAD_REQUEST)
 
