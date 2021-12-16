@@ -146,12 +146,35 @@ def files_list(request):
 
 @api_view(['GET'])
 def get_specific_file(request):
-    file = FileNewModel.objects.get(pk=51)
+    id_token = request.GET.get("id_token", '')
+    uid = get_uid(id_token)
+    if uid is None:
+        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
 
-    file_handle = file.content.open()
+    filepath = ''
+    try:
+        filepath = request.data['filepath']
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = CustomUIDModel.objects.filter(uid=uid).get().user
+    try:
+        file = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(filepath),
+                                        fileName=os.path.basename(filepath))
+    except FileNewModel.DoesNotExist:
+        return Response(data={'status': 'File not Exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        file_handle = file.content.open()
+    except FileNotFoundError:
+        return Response(data={'status': 'File not Exist'}, status=status.HTTP_404_NOT_FOUND)
     response = FileResponse(file_handle, status=status.HTTP_200_OK, filename='test')
     response['Content-Length'] = file.content.size
-    response['X-Content-Name'] = file.checksum
+    response['X-Content-Check.Sum'] = file.checksum
+    response['X-Content-File-Name'] = file.fileName
+    response['X-Content-Last-Changed'] = file.last_changed
+    response['X-Content-Location'] = file.location
+    response['X-Content-Is-Public'] = file.isPublic
     response['Content-Disposition'] = 'attachment; filename="%s"' % file.content.name
 
     return response
