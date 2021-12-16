@@ -120,6 +120,9 @@ def json_from_path(path, uid, user):
         d['children'] = [json_from_path(os.path.join(path, x), uid, user) for x in os.listdir(path)]
     elif os.path.isfile(path):
         location = os.path.dirname(path).replace(f'{settings.MEDIA_ROOT}\\{uid}', '')
+        print(f'1: {location}')
+        print(f'2: {os.path.basename(path)}')
+        print(f'3: {path}')
         location = location.replace('\\', '/')
         if location == '':
             location = '/'
