@@ -101,9 +101,10 @@ class FileViewSet(viewsets.ModelViewSet):
     #     return Response(data=response, status=status.HTTP_200_OK)
 
 
-def jsonFromPath(path, uid, user):
+def json_from_path(path, uid, user):
     # d = {'name': os.path.basename(path)}
     d = {}
+
     if os.path.isdir(path):
         d['type'] = "directory"
         location = os.path.dirname(path)
@@ -115,29 +116,31 @@ def jsonFromPath(path, uid, user):
         if location == '':
             location = '/'
         d['location'] = location
-        d['children'] = [jsonFromPath(os.path.join(path, x), uid, user) for x in os.listdir(path)]
+        d['children'] = [json_from_path(os.path.join(path, x), uid, user) for x in os.listdir(path)]
     else:
-        d['type'] = "file"
         location = os.path.dirname(path).replace(f'{settings.MEDIA_ROOT}\\{uid}', '')
         location = location.replace('\\', '/')
         if location == '':
             location = '/'
-        d['location'] = location
         if location == '/':
             filepath = f'/{os.path.basename(path)}'
         else:
             filepath = f'{location}/{os.path.basename(path)}'
-        temp = FileNewModel.objects.filter(owner_id=user.pk, content=f'{uid}{filepath}').first()
-        # print(temp.checksum)
-        d['path'] = filepath
-        d['checksum'] = temp.checksum
-        d['last_changed'] = temp.last_changed
-        d['isPublic'] = temp.isPublic
+        temp = FileNewModel.objects.get(owner_id=user.pk, location=location, fileName=os.path.basename(path))
+        try:
+            d['type'] = "file"
+            d['location'] = location
+            d['path'] = filepath
+            d['checksum'] = temp.checksum
+            d['last_changed'] = temp.last_changed
+            d['isPublic'] = temp.isPublic
+        except:
+            return 'error'
     return d
 
 
 @api_view(['GET'])
-def filesList(request):
+def files_list(request):
     id_token = request.GET.get("id_token", '')
     uid = get_uid(id_token)
     if uid is None:
@@ -145,13 +148,16 @@ def filesList(request):
 
     user = CustomUIDModel.objects.filter(uid=uid).get().user
 
-    json_data = jsonFromPath(os.path.join(settings.STATIC_ROOT, settings.MEDIA_ROOT, uid), uid, user)
+    json_data = json_from_path(os.path.join(settings.STATIC_ROOT, settings.MEDIA_ROOT, uid), uid, user)
+
+    if json_data is 'error':
+        return Response(data={'status': 'Database error'}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response(data=json_data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
-def getFile(request):
+def get_file(request):
     id_token = request.GET.get("id_token", '')
     uid = get_uid(id_token)
     if uid is None:
@@ -181,7 +187,7 @@ def getFile(request):
 
 
 @api_view(['POST'])
-def uploadFile(request):
+def upload_file(request):
     # TODO: Abfrage nach verfügbaren Speicherplatz für User
 
     upload = request.FILES['content']
@@ -200,7 +206,6 @@ def uploadFile(request):
     fileNew.location = upload_data['location']
     fileNew.content = upload
     fileNew.checksum = upload_data['checksum']
-
     # TODO: get directory of user and match it with request
 
     # TODO: Users Account erhalten und dementsprechend eintragen
@@ -210,8 +215,10 @@ def uploadFile(request):
     if fileNew.location != 'null':
         fileNew.content.name = str(uid) + '/' + fileNew.location + '/' + fileNew.fileName
     else:
-        fileNew.content.name = str(uid) + '/' + fileNew.name
+        fileNew.content.name = str(uid) + '/' + fileNew.fileName
 
+    fileName = fileNew.content.name.replace(uid,'')
+    fileNew.fileName = fileName.replace('/','')
     serializer = FileNewSerializer(data=fileNew.__dict__)
     if serializer.is_valid():
         fileNew.save()
