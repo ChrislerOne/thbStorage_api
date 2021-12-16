@@ -113,7 +113,8 @@ def json_from_path(path, uid, user):
         d['children'] = [json_from_path(os.path.join(path, x),uid, user) for x in os.listdir(absolute_path)]
     elif os.path.isfile(absolute_path):
         # ansolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
-        temp = FileNewModel.objects.get(owner_id=user.pk, location=path, fileName=os.path.basename(path))
+        print(os.path.dirname(path))
+        temp = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(path), fileName=os.path.basename(path))
         try:
             d['type'] = "file"
             d['location'] = path
