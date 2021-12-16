@@ -1,7 +1,7 @@
 import json
 import os
 import random
-
+from django.utils import timezone
 import django.core.exceptions
 import rest_framework.exceptions
 from django.contrib.auth.models import User
@@ -217,8 +217,8 @@ def upload_file(request):
     else:
         fileNew.content.name = str(uid) + '/' + fileNew.fileName
 
-    fileName = fileNew.content.name.replace(uid,'')
-    fileNew.fileName = fileName.replace('/','')
+    fileName = fileNew.content.name.replace(uid, '')
+    fileNew.fileName = fileName.replace('/', '')
     serializer = FileNewSerializer(data=fileNew.__dict__)
     if serializer.is_valid():
         fileNew.save()
@@ -228,3 +228,33 @@ def upload_file(request):
         return Response(serializer.errors, status=400)
 
     return Response(status=201)
+
+
+@api_view(['GET'])
+def update_filename(request):
+    id_token = request.GET.get("id_token", '')
+    uid = get_uid(id_token)
+    if uid is None:
+        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    upload_data = request.data
+    fileName = upload_data['name']
+    newFileName = upload_data['newName']
+    location = upload_data['location']
+
+    user = CustomUIDModel.objects.filter(uid=uid).get().user
+    try:
+        file = FileNewModel.objects.get(owner_id=user.pk, location=location, fileName=fileName)
+    except FileNewModel.DoesNotExist:
+        file = None
+        return Response(data={'status': 'File not Exist'}, status=status.HTTP_404_NOT_FOUND)
+    path = f'{settings.MEDIA_ROOT}/{uid}{location}{fileName}'
+    new_file_path = f'{settings.MEDIA_ROOT}/{uid}{location}{newFileName}'
+    os.rename(path, new_file_path)
+    # print(f'{path} \n{new_file_path}')
+    file.fileName = newFileName
+    file.last_changed = timezone.now()
+    file.content.name = f'{uid}/{newFileName}'
+    file.save()
+
+    return Response(data={'status': 'updated'}, status=status.HTTP_200_OK)
