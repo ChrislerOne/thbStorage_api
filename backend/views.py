@@ -116,6 +116,7 @@ def json_from_path(path, uid, user):
         if location == '':
             location = '/'
         d['location'] = location
+        d['folderName'] = os.path.basename(path).replace(uid,'')
         d['children'] = [json_from_path(os.path.join(path, x), uid, user) for x in os.listdir(path)]
     else:
         location = os.path.dirname(path).replace(f'{settings.MEDIA_ROOT}\\{uid}', '')
@@ -231,7 +232,7 @@ def upload_file(request):
 
 
 @api_view(['GET'])
-def update_filename(request):
+def rename_filename(request):
     id_token = request.GET.get("id_token", '')
     uid = get_uid(id_token)
     if uid is None:
@@ -258,3 +259,46 @@ def update_filename(request):
     file.save()
 
     return Response(data={'status': 'updated'}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def create_directory(request):
+    id_token = request.GET.get("id_token", '')
+    uid = get_uid(id_token)
+    if uid is None:
+        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    upload_data = request.data
+    location = upload_data['location']
+    name = upload_data['name']
+
+    path = f'{settings.MEDIA_ROOT}/{uid}{location}'
+    new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}/{name}'
+
+    if not os.path.exists(new_dir_path):
+        os.makedirs(new_dir_path)
+    else:
+        return Response(data={'status': 'directory already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+def rename_directory(request):
+    id_token = request.GET.get("id_token", '')
+    uid = get_uid(id_token)
+    if uid is None:
+        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    upload_data = request.data
+    location = upload_data['location']
+    name = upload_data['name']
+    new_name = upload_data['newName']
+
+    path = f'{settings.MEDIA_ROOT}/{uid}{location}{name}'
+    new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}{new_name}'
+
+    if os.path.exists(path):
+        os.rename(path,new_dir_path)
+    else:
+        return Response(data={'status': 'directory not exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(status=status.HTTP_201_CREATED)
