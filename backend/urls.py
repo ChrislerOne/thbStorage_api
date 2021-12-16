@@ -10,9 +10,9 @@ router = routers.SimpleRouter()
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('files/', views.filesList),
-    path('file/upload', views.uploadFile),
-    path('file', views.getFile),
+    path('files/', views.files_list),
+    path('file/upload', views.upload_file),
+    path('file', views.get_file),
     # API-Endpoint to obtain user token with cred
     path('api-token-auth/', v.obtain_auth_token)
 
