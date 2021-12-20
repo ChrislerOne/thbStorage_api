@@ -11,6 +11,7 @@ router = routers.SimpleRouter()
 urlpatterns = [
     path('', include(router.urls)),
     path('files/', views.files_list),
+    path('files/bypath', views.files_list_by_path),
     path('file/upload', views.upload_file),
     path('file', views.get_file),
     path('file/specific', views.get_specific_file),
