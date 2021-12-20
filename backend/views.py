@@ -101,6 +101,13 @@ class FileViewSet(viewsets.ModelViewSet):
     #     return Response(data=response, status=status.HTTP_200_OK)
 
 
+def check_auth(id_token):
+    uid = get_uid(id_token)
+    if uid is None:
+        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    return uid
+
+
 def json_from_path(path, uid, user):
     # d = {'name': os.path.basename(path)}
     d = {}
@@ -129,10 +136,7 @@ def json_from_path(path, uid, user):
 
 @api_view(['GET'])
 def files_list(request):
-    id_token = request.GET.get("id_token", '')
-    uid = get_uid(id_token)
-    if uid is None:
-        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    uid = check_auth(request.GET.get("id_token", ''))
 
     user = CustomUIDModel.objects.filter(uid=uid).get().user
 
@@ -145,11 +149,28 @@ def files_list(request):
 
 
 @api_view(['GET'])
+def files_list_by_path(request):
+    uid = check_auth(request.GET.get("id_token", ''))
+
+    user = CustomUIDModel.objects.filter(uid=uid).get().user
+
+    filepath = ''
+    try:
+        filepath = request.data['filepath']
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+    json_data = json_from_path(filepath, uid, user)
+
+    if json_data is 'error':
+        return Response(data={'status': 'Database error'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(data=json_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
 def get_specific_file(request):
-    id_token = request.GET.get("id_token", '')
-    uid = get_uid(id_token)
-    if uid is None:
-        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    uid = check_auth(request.GET.get("id_token", ''))
 
     filepath = ''
     try:
@@ -180,12 +201,10 @@ def get_specific_file(request):
     return response
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def get_file(request):
-    id_token = request.GET.get("id_token", '')
-    uid = get_uid(id_token)
-    if uid is None:
-        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    uid = check_auth(request.GET.get("id_token", ''))
+
     filepath = ''
     try:
         filepath = request.data['filepath']
@@ -217,10 +236,7 @@ def upload_file(request):
     upload = request.FILES['content']
     upload_data = request.data
 
-    id_token = request.GET.get("id_token", '')
-    uid = get_uid(id_token)
-    if uid is None:
-        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    uid = check_auth(request.GET.get("id_token", ''))
     user = create_user_if_not_existent(uid)
 
     # TODO: Directory erstellen, falls nicht vorhanden und dann setzen.
@@ -254,12 +270,9 @@ def upload_file(request):
     return Response(status=201)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def rename_filename(request):
-    id_token = request.GET.get("id_token", '')
-    uid = get_uid(id_token)
-    if uid is None:
-        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    uid = check_auth(request.GET.get("id_token", ''))
 
     upload_data = request.data
     fileName = upload_data['name']
@@ -284,12 +297,9 @@ def rename_filename(request):
     return Response(data={'status': 'updated'}, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def create_directory(request):
-    id_token = request.GET.get("id_token", '')
-    uid = get_uid(id_token)
-    if uid is None:
-        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    uid = check_auth(request.GET.get("id_token", ''))
 
     upload_data = request.data
     location = upload_data['location']
@@ -306,12 +316,9 @@ def create_directory(request):
     return Response(status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def rename_directory(request):
-    id_token = request.GET.get("id_token", '')
-    uid = get_uid(id_token)
-    if uid is None:
-        return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    uid = check_auth(request.GET.get("id_token", ''))
 
     upload_data = request.data
     location = upload_data['location']
