@@ -148,7 +148,7 @@ def files_list(request):
     return Response(data=json_data, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def files_list_by_path(request):
     uid = check_auth(request.GET.get("id_token", ''))
 
