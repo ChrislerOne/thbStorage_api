@@ -1,4 +1,4 @@
-import os, re
+import os
 import random
 import hashlib
 import string
