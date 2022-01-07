@@ -192,7 +192,6 @@ def upload_file(request):
     fileName = fileName.replace('/', '')
 
     if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
-        # file.name.model.xy.pdf
         rawName = fileName.split('.')
         rawName[0] = str(rawName[0]) + str(FileNewModel.objects.last().id + 1)
         fileName = '.'.join(rawName)
