@@ -214,15 +214,15 @@ def upload_file(request):
     fileName = fileName.replace('/', '')
 
     ownHash = hashlib.sha1(
-        str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
+        str(random.choices(string.ascii_uppercase + string.digits, k=5)).encode("UTF-8")).hexdigest()[
               :10]
+
+    fileName = slugify(fileName)
 
     if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
         rawName = fileName.split('.')
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
         fileName = '.'.join(rawName)
-
-    fileName = slugify(fileName)
 
     # fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
 
