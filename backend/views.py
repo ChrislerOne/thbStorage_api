@@ -1,4 +1,4 @@
-import os
+import os, re
 import random
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -192,13 +192,19 @@ def upload_file(request):
     fileName = fileName.replace('/', '')
 
     if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
-        fileName = fileName + str(FileNewModel.objects.last().id + 1)
+        # file.name.model.xy.pdf
+        rawName = fileName.split('.')
+        rawName[0] = str(rawName[0]) + str(FileNewModel.objects.last().id + 1)
+        fileName = '.'.join(rawName)
+
+    fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
 
     if fileNew.location != 'null':
-        fileNew.content.name = str(uid) + '/' + fileNew.location + '/' + fileName
+        fileNew.content.name = os.sep.join([str(uid), fileNew.location, fileName])
     else:
-        fileNew.content.name = str(uid) + '/' + fileName
+        fileNew.content.name = os.sep.join([str(uid), fileName])
 
+    fileNew.fileName = fileName
     fileNew.fileName = fileName
 
     serializer = FileNewSerializer(data=fileNew.__dict__)
@@ -232,7 +238,10 @@ def rename_filename(request):
     try:
         file = FileNewModel.objects.get(owner_id=user.pk, location=location, fileName=fileName)
         if FileNewModel.objects.get(fileName=newFileName, location=location):
-            newFileName = newFileName + str(FileNewModel.objects.get(fileName=fileName, location=location).id)
+            rawName = newFileName.split('.')
+            rawName[0] = str(rawName[0]) + str(FileNewModel.objects.get(fileName=fileName, location=location).id)
+            newFileName = '.'.join(rawName)
+
     except ObjectDoesNotExist:
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
 
