@@ -204,7 +204,7 @@ def upload_file(request):
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
         fileName = '.'.join(rawName)
 
-    fileName = slugify(fileName)
+    #fileName = slugify(fileName)
 
     # fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
 
@@ -213,7 +213,7 @@ def upload_file(request):
     else:
         fileNew.content.name = os.sep.join([str(uid), fileName])
 
-    fileNew.fileName = fileName
+    fileNew.fileName = fileNew.content.name
 
     serializer = FileNewSerializer(data=fileNew.__dict__)
     if serializer.is_valid():
