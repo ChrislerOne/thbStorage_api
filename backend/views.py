@@ -210,8 +210,11 @@ def upload_file(request):
     else:
         fileNew.content.name = os.sep.join([str(uid), fileName])
 
-    fileNew.fileName = fileName
-    fileNew.fileName = fileName
+    try:
+        r = fileNew.content.name.split('/')
+        fileNew.fileName = r[-1]
+    except IndexError:
+        return Response({'status': 'expected index not available'}, status=status.HTTP_400_BAD_REQUEST)
 
     serializer = FileNewSerializer(data=fileNew.__dict__)
     if serializer.is_valid():
