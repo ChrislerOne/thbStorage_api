@@ -268,7 +268,7 @@ def rename_filename(request):
                 str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
                       :10]
             rawName[0] = str(rawName[0]) + str(ownHash)
-            newFileName = '.'.join(rawName)
+            newFileName = slugify('.'.join(rawName))
 
     except ObjectDoesNotExist:
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
@@ -278,7 +278,7 @@ def rename_filename(request):
     os.rename(path, new_file_path)
     file.fileName = newFileName
     file.last_changed = timezone.now()
-    file.content.name = f'{uid}/{newFileName}'
+    file.content.name = os.sep.join([str(uid), location, newFileName])
     file.save()
 
     return Response(data={'status': 'updated'}, status=status.HTTP_200_OK)
@@ -309,23 +309,50 @@ def create_directory(request):
     return Response(status=status.HTTP_201_CREATED)
 
 
+def rename_content_file_directory_in_DB(obj: FileNewModel, new_location: str):
+    try:
+        uid = CustomUIDModel.objects.filter(pk=obj.owner.id).get().user.uid
+        obj.content.name = os.sep.join([str(uid), new_location, obj.fileName])
+        obj.save()
+        return True
+    except:
+        return False
+
+
 @api_view(['GET', 'POST'])
 def rename_directory(request):
     uid = check_auth(request.GET.get("id_token", ''))
     try:
+        owid = CustomUIDModel.objects.filter(uid=uid).get().user.pk
+    except ObjectDoesNotExist:
+        return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
         upload_data = request.data
         location = upload_data['location']
+        newLocation = slugify(upload_data['newLocation'])
         name = upload_data['name']
-        new_name = upload_data['newName']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     path = f'{settings.MEDIA_ROOT}/{uid}{location}{name}'
-    new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}{new_name}'
+    new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{newLocation}{name}'
 
     if os.path.exists(path):
         os.rename(path, new_dir_path)
     else:
         return Response(data={'status': 'directory not exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+    rec_list = FileNewModel.objects.get(location=location, owner_id=owid)
+
+    try:
+        for obj in FileNewModel.objects.get(location=location, owner_id=owid):
+            if not rename_content_file_directory_in_DB(obj, newLocation):
+                raise Exception
+
+    except:
+        for obj in rec_list:
+            rename_content_file_directory_in_DB(obj, obj.location)
+        return Response(status=status.HTTP_400_BAD_REQUEST, data={'status': 'Directory name could not be changed!'})
 
     return Response(status=status.HTTP_201_CREATED)
