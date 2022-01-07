@@ -152,7 +152,7 @@ def get_file(request):
     file = open(f'{settings.MEDIA_ROOT}/{uid}{filepath}', 'r')
     file.close()
     filename = os.path.basename(file.name)
-    print(temp.fileName)
+    # print(temp.fileName)
     json_data = {
         'fileName': filename,
         'location': file.name.replace(f'{settings.MEDIA_ROOT}/{uid}', ''),
