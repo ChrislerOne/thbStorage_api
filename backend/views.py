@@ -202,8 +202,9 @@ def upload_file(request):
     if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
         rawName = fileName.split('.')
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
-        fileName = slugify('.'.join(rawName))
+        fileName = '.'.join(rawName)
 
+    fileName = slugify(fileName)
 
     # fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
 
