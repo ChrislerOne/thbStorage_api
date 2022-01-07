@@ -5,6 +5,7 @@ import string
 
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.utils.text import slugify
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -201,7 +202,7 @@ def upload_file(request):
     if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
         rawName = fileName.split('.')
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
-        fileName = '.'.join(rawName)
+        fileName = slugify('.'.join(rawName))
 
     # fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
 
@@ -210,11 +211,7 @@ def upload_file(request):
     else:
         fileNew.content.name = os.sep.join([str(uid), fileName])
 
-    try:
-        r = fileNew.content.name.split('/')
-        fileNew.fileName = r[-1]
-    except IndexError:
-        return Response({'status': 'expected index not available'}, status=status.HTTP_400_BAD_REQUEST)
+    fileNew.fileName = fileName
 
     serializer = FileNewSerializer(data=fileNew.__dict__)
     if serializer.is_valid():
