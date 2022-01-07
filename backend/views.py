@@ -186,17 +186,18 @@ def upload_file(request):
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if fileNew.location != 'null':
-        fileNew.content.name = str(uid) + '/' + fileNew.location + '/' + fileNew.fileName
-    else:
-        fileNew.content.name = str(uid) + '/' + fileNew.fileName
-
     fileName = fileNew.content.name.replace(uid, '')
-    # fileNew.fileName = fileName.replace('/', '')
+    if fileNew.location != 'null':
+        fileName = fileName.replace(fileNew.location, '')
+    fileName = fileName.replace('/', '')
 
     if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
         fileName = fileName + str(FileNewModel.objects.last().id + 1)
-        fileNew.content.name = fileName
+
+    if fileNew.location != 'null':
+        fileNew.content.name = str(uid) + '/' + fileNew.location + '/' + fileName
+    else:
+        fileNew.content.name = str(uid) + '/' + fileName
 
     fileNew.fileName = fileName
 
