@@ -41,10 +41,13 @@ def json_from_path(path, uid, user):
     absolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
     print(absolute_path)
     if os.path.isdir(absolute_path):
-        d['type'] = "directory"
-        d['location'] = path
-        d['folderName'] = os.path.basename(path).replace(uid, '')
-        d['children'] = [json_from_path(os.path.join(path, x), uid, user) for x in os.listdir(absolute_path)]
+        try:
+            d['type'] = "directory"
+            d['location'] = path
+            d['folderName'] = os.path.basename(path).replace(uid, '')
+            d['children'] = [json_from_path(os.path.join(path, x), uid, user) for x in os.listdir(absolute_path)]
+        except FileNotFoundError:
+            return Response({'status': 'File not Found'}, status=status.HTTP_404_NOT_FOUND)
     elif os.path.isfile(absolute_path):
         # ansolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
         print(os.path.dirname(path))
@@ -85,7 +88,6 @@ def files_list_by_path(request):
 
     user = CustomUIDModel.objects.filter(uid=uid).get().user
 
-    filepath = ''
     try:
         filepath = request.data['filepath']
     except KeyError:
@@ -103,7 +105,6 @@ def files_list_by_path(request):
 def get_specific_file(request):
     uid = check_auth(request.GET.get("id_token", ''))
 
-    filepath = ''
     try:
         filepath = request.data['filepath']
     except KeyError:
@@ -137,7 +138,6 @@ def get_specific_file(request):
 def get_file(request):
     uid = check_auth(request.GET.get("id_token", ''))
 
-    filepath = ''
     try:
         filepath = request.data['filepath']
     except KeyError:
