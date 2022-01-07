@@ -197,7 +197,10 @@ def upload_file(request):
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     uid = check_auth(request.GET.get("id_token", ''))
-    user = create_user_if_not_existent(uid)
+    try:
+        user = CustomUIDModel.objects.filter(uid=uid).get().user
+    except ObjectDoesNotExist:
+        return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         fileNew = FileNewModel()
         fileNew.fileName = upload_data['name']
@@ -214,12 +217,12 @@ def upload_file(request):
     fileName = fileName.replace('/', '')
 
     ownHash = hashlib.sha1(
-        str(random.choices(string.ascii_uppercase + string.digits, k=5)).encode("UTF-8")).hexdigest()[
-              :10]
+        str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
+              :5]
 
     fileName = slugify(fileName)
 
-    if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
+    if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location, owner_id=user.ok):
         rawName = fileName.split('.')
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
         fileName = '.'.join(rawName)
@@ -245,7 +248,10 @@ def upload_file(request):
 @api_view(['GET', 'POST'])
 def rename_filename(request):
     uid = check_auth(request.GET.get("id_token", ''))
-
+    try:
+        owid = CustomUIDModel.objects.filter(uid=uid).get().user.pk
+    except ObjectDoesNotExist:
+        return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
         fileName = upload_data['name']
@@ -255,13 +261,8 @@ def rename_filename(request):
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = CustomUIDModel.objects.filter(uid=uid).get().user
-    except ObjectDoesNotExist:
-        return Response(data={'status': 'Object does not exist!'}, status=status.HTTP_404_NOT_FOUND)
-
-    try:
-        file = FileNewModel.objects.get(owner_id=user.pk, location=location, fileName=fileName)
-        if FileNewModel.objects.get(fileName=newFileName, location=location):
+        file = FileNewModel.objects.get(owner_id=owid, location=location, fileName=fileName)
+        if FileNewModel.objects.get(fileName=newFileName, location=location, owner_id=owid):
             rawName = newFileName.split('.')
             ownHash = hashlib.sha1(
                 str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
@@ -286,7 +287,10 @@ def rename_filename(request):
 @api_view(['GET', 'POST'])
 def create_directory(request):
     uid = check_auth(request.GET.get("id_token", ''))
-
+    try:
+        owid = CustomUIDModel.objects.filter(uid=uid).get().user.pk
+    except ObjectDoesNotExist:
+        return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
         location = upload_data['location']
