@@ -1,24 +1,16 @@
-import json
 import os
 import random
 from django.utils import timezone
-import django.core.exceptions
-import rest_framework.exceptions
 from django.contrib.auth.models import User
-from django.core import serializers
-from rest_framework import viewsets
 from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser
 
-import backend.models
-from backend.serializer import FileSerializer, FileNewSerializer
-from backend.models import FileModel, DirectoryModel, CustomUIDModel, FileNewModel
+from backend.serializer import FileNewSerializer
+from backend.models import CustomUIDModel, FileNewModel
+from django.core.exceptions import ObjectDoesNotExist
 from backend.firebase import get_user, get_uid
 from rest_framework.exceptions import *
-from django.core.exceptions import *
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse
 
 from thbStorage_API import settings
 
@@ -34,71 +26,6 @@ def create_user_if_not_existent(uid: str):
                                    password=str(str(random.randbytes(14))))
         CustomUIDModel.objects.create(uid=firebase_user.uid, user=user)
     return user
-
-
-# Create your views here.
-class FileViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows files to be viewed or edited
-    """
-    queryset = FileModel.objects.all()
-    serializer_class = FileSerializer
-    parser_class = (MultiPartParser,)
-
-    permission_classes = [IsAuthenticated]
-
-    # def perform_create(self, serializer):
-    #     # TODO: Abfrage nach verfügbaren Speicherplatz für User
-    #
-    #     upload = self.request.FILES['content']
-    #     upload_data = self.request.data
-    #
-    #     uid = get_uid(upload_data['id_token'])
-    #     user = create_user_if_not_existent(uid)
-    #
-    #     # TODO: Directory erstellen, falls nicht vorhanden und dann setzen.
-    #     directory = DirectoryModel.objects.get(pk=1)
-    #
-    #     file = FileModel()
-    #     file.name = upload_data['name']
-    #     file.location = upload_data['location']
-    #     file.content = upload
-    #     file.checksum = ''
-    #     # TODO: get directory of user and match it with request
-    #     file.directory = directory
-    #     # TODO: Users Account erhalten und dementsprechend eintragen
-    #     file.owner = user
-    #     # file.owner = upload_data['user']
-    #
-    #     if file.location != 'null':
-    #         file.content.name = str(uid) + '/' + file.location + '/' + file.name
-    #     else:
-    #         file.content.name = str(uid) + '/' + file.name
-    #
-    #     serializer = FileSerializer(data=file.__dict__)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #     else:
-    #         print(serializer.errors)
-    #         print(file.__dict__)
-    #         return Response(serializer.errors, status=400)
-    #
-    #     return Response(status=201)
-
-    # def list(self, request, *args, **kwargs):
-    #     id_token = request.GET.get("id_token", '')
-    #     uid = get_uid(id_token)
-    #     if uid is None:
-    #         return Response({'status': 'not authorized'}, status=status.HTTP_403_FORBIDDEN)
-    #
-    #     user = CustomUIDModel.objects.filter(uid=uid).get().user
-    #     all_files = FileModel.objects.filter(owner_id=user.pk)
-    #     response = serializers.serialize('json', all_files)
-    #     response = json.loads(response)
-    #     for d in response:
-    #         del d['model']
-    #         del d['pk']
-    #     return Response(data=response, status=status.HTTP_200_OK)
 
 
 def check_auth(id_token):
@@ -121,8 +48,12 @@ def json_from_path(path, uid, user):
     elif os.path.isfile(absolute_path):
         # ansolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
         print(os.path.dirname(path))
-        temp = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(path),
-                                        fileName=os.path.basename(path))
+        try:
+            temp = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(path),
+                                            fileName=os.path.basename(path))
+        except ObjectDoesNotExist:
+            return Response({'status': 'Requested file does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+
         try:
             d['type'] = "file"
             d['location'] = path
@@ -142,7 +73,7 @@ def files_list(request):
 
     json_data = json_from_path('/', uid, user)
 
-    if json_data is 'error':
+    if json_data == 'error':
         return Response(data={'status': 'Database error'}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response(data=json_data, status=status.HTTP_200_OK)
@@ -162,7 +93,7 @@ def files_list_by_path(request):
 
     json_data = json_from_path(filepath, uid, user)
 
-    if json_data is 'error':
+    if json_data == 'error':
         return Response(data={'status': 'Database error'}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response(data=json_data, status=status.HTTP_200_OK)
@@ -178,8 +109,8 @@ def get_specific_file(request):
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = CustomUIDModel.objects.filter(uid=uid).get().user
     try:
+        user = CustomUIDModel.objects.filter(uid=uid).get().user
         file = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(filepath),
                                         fileName=os.path.basename(filepath))
     except FileNewModel.DoesNotExist:
@@ -189,6 +120,7 @@ def get_specific_file(request):
         file_handle = file.content.open()
     except FileNotFoundError:
         return Response(data={'status': 'File not Exist'}, status=status.HTTP_404_NOT_FOUND)
+
     response = FileResponse(file_handle, status=status.HTTP_200_OK, filename='test')
     response['Content-Length'] = file.content.size
     response['X-Content-Check.Sum'] = file.checksum
@@ -212,8 +144,11 @@ def get_file(request):
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = CustomUIDModel.objects.filter(uid=uid).get().user
+    try:
+        temp = FileNewModel.objects.get(owner_id=user.pk, content=f'{uid}{filepath}')
+    except ObjectDoesNotExist:
+        return Response({'status': 'Requested file does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
-    temp = FileNewModel.objects.get(owner_id=user.pk, content=f'{uid}{filepath}')
     file = open(f'{settings.MEDIA_ROOT}/{uid}{filepath}', 'r')
     file.close()
     filename = os.path.basename(file.name)
@@ -233,24 +168,23 @@ def get_file(request):
 def upload_file(request):
     # TODO: Abfrage nach verfügbaren Speicherplatz für User
 
-    upload = request.FILES['content']
-    upload_data = request.data
+    try:
+        upload = request.FILES['content']
+        upload_data = request.data
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     uid = check_auth(request.GET.get("id_token", ''))
     user = create_user_if_not_existent(uid)
-
-    # TODO: Directory erstellen, falls nicht vorhanden und dann setzen.
-
-    fileNew = FileNewModel()
-    fileNew.fileName = upload_data['name']
-    fileNew.location = upload_data['location']
-    fileNew.content = upload
-    fileNew.checksum = upload_data['checksum']
-    # TODO: get directory of user and match it with request
-
-    # TODO: Users Account erhalten und dementsprechend eintragen
-
-    fileNew.owner = user
+    try:
+        fileNew = FileNewModel()
+        fileNew.fileName = upload_data['name']
+        fileNew.location = upload_data['location']
+        fileNew.content = upload
+        fileNew.checksum = upload_data['checksum']
+        fileNew.owner = user
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     if fileNew.location != 'null':
         fileNew.content.name = str(uid) + '/' + fileNew.location + '/' + fileNew.fileName
@@ -258,7 +192,14 @@ def upload_file(request):
         fileNew.content.name = str(uid) + '/' + fileNew.fileName
 
     fileName = fileNew.content.name.replace(uid, '')
-    fileNew.fileName = fileName.replace('/', '')
+    # fileNew.fileName = fileName.replace('/', '')
+
+    if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
+        fileName = fileName + str(FileNewModel.objects.last().id + 1)
+        fileNew.content.name = fileName
+
+    fileNew.fileName = fileName
+
     serializer = FileNewSerializer(data=fileNew.__dict__)
     if serializer.is_valid():
         fileNew.save()
@@ -274,21 +215,29 @@ def upload_file(request):
 def rename_filename(request):
     uid = check_auth(request.GET.get("id_token", ''))
 
-    upload_data = request.data
-    fileName = upload_data['name']
-    newFileName = upload_data['newName']
-    location = upload_data['location']
+    try:
+        upload_data = request.data
+        fileName = upload_data['name']
+        newFileName = upload_data['newName']
+        location = upload_data['location']
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = CustomUIDModel.objects.filter(uid=uid).get().user
+    try:
+        user = CustomUIDModel.objects.filter(uid=uid).get().user
+    except ObjectDoesNotExist:
+        return Response(data={'status': 'Object does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+
     try:
         file = FileNewModel.objects.get(owner_id=user.pk, location=location, fileName=fileName)
-    except FileNewModel.DoesNotExist:
-        file = None
-        return Response(data={'status': 'File not Exist'}, status=status.HTTP_404_NOT_FOUND)
+        if FileNewModel.objects.get(fileName=newFileName, location=location):
+            newFileName = newFileName + str(FileNewModel.objects.get(fileName=fileName, location=location).id)
+    except ObjectDoesNotExist:
+        return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
+
     path = f'{settings.MEDIA_ROOT}/{uid}{location}{fileName}'
     new_file_path = f'{settings.MEDIA_ROOT}/{uid}{location}{newFileName}'
     os.rename(path, new_file_path)
-    # print(f'{path} \n{new_file_path}')
     file.fileName = newFileName
     file.last_changed = timezone.now()
     file.content.name = f'{uid}/{newFileName}'
@@ -301,9 +250,12 @@ def rename_filename(request):
 def create_directory(request):
     uid = check_auth(request.GET.get("id_token", ''))
 
-    upload_data = request.data
-    location = upload_data['location']
-    name = upload_data['name']
+    try:
+        upload_data = request.data
+        location = upload_data['location']
+        name = upload_data['name']
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     path = f'{settings.MEDIA_ROOT}/{uid}{location}'
     new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}/{name}'
@@ -319,11 +271,13 @@ def create_directory(request):
 @api_view(['GET', 'POST'])
 def rename_directory(request):
     uid = check_auth(request.GET.get("id_token", ''))
-
-    upload_data = request.data
-    location = upload_data['location']
-    name = upload_data['name']
-    new_name = upload_data['newName']
+    try:
+        upload_data = request.data
+        location = upload_data['location']
+        name = upload_data['name']
+        new_name = upload_data['newName']
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     path = f'{settings.MEDIA_ROOT}/{uid}{location}{name}'
     new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}{new_name}'
