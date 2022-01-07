@@ -203,7 +203,7 @@ def upload_file(request):
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
         fileName = '.'.join(rawName)
 
-    fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
+    # fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
 
     if fileNew.location != 'null':
         fileNew.content.name = os.sep.join([str(uid), fileNew.location, fileName])
