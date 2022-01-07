@@ -204,6 +204,7 @@ def upload_file(request):
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
         fileName = slugify('.'.join(rawName))
 
+
     # fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
 
     if fileNew.location != 'null':
