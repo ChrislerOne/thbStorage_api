@@ -1,5 +1,8 @@
 import os, re
 import random
+import hashlib
+import string
+
 from django.utils import timezone
 from django.contrib.auth.models import User
 from rest_framework.decorators import api_view
@@ -191,9 +194,13 @@ def upload_file(request):
         fileName = fileName.replace(fileNew.location, '')
     fileName = fileName.replace('/', '')
 
+    ownHash = hashlib.sha1(
+        str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
+              :10]
+
     if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location):
         rawName = fileName.split('.')
-        rawName[0] = str(rawName[0]) + str(FileNewModel.objects.last().id + 1)
+        rawName[0] = str(rawName[0]) + '_' + str(ownHash)
         fileName = '.'.join(rawName)
 
     fileName = re.sub(r'[^\w\-_ ]', '_', fileName)
@@ -238,7 +245,10 @@ def rename_filename(request):
         file = FileNewModel.objects.get(owner_id=user.pk, location=location, fileName=fileName)
         if FileNewModel.objects.get(fileName=newFileName, location=location):
             rawName = newFileName.split('.')
-            rawName[0] = str(rawName[0]) + str(FileNewModel.objects.get(fileName=fileName, location=location).id)
+            ownHash = hashlib.sha1(
+                str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
+                      :10]
+            rawName[0] = str(rawName[0]) + str(ownHash)
             newFileName = '.'.join(rawName)
 
     except ObjectDoesNotExist:
