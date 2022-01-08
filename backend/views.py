@@ -262,7 +262,7 @@ def rename_filename(request):
 
     try:
         file = FileNewModel.objects.get(owner_id=owid, location=location, fileName=fileName)
-        if FileNewModel.objects.get(fileName=newFileName, location=location, owner_id=owid):
+        if FileNewModel.objects.filter(fileName=newFileName, location=location, owner_id=owid).exists():
             rawName = newFileName.split('.')
             ownHash = hashlib.sha1(
                 str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
