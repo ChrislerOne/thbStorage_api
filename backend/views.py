@@ -332,7 +332,7 @@ def rename_directory(request):
 
     try:
         upload_data = request.data
-        location = upload_data['location']
+        location = list(upload_data['location'])
         newLocation = slugify(upload_data['newLocation'])
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
