@@ -314,12 +314,14 @@ def create_directory(request):
 
 def rename_content_file_directory_in_DB(obj: FileNewModel, new_location: str):
     try:
-        uid = CustomUIDModel.objects.filter(pk=obj.owner.id).get().user.uid
+        uid = CustomUIDModel.objects.filter(user_id=obj.owner.id).get().user.uid
+        print(uid)
         obj.content.name = os.sep.join([str(uid), new_location, obj.fileName])
+        print(obj)
         obj.save()
         return True
     except:
-        return Response(status=status.HTTP_404_NOT_FOUND, data={'status': 'Error while changing db entry!'})
+        return False
         # return False
 
 
@@ -357,8 +359,8 @@ def rename_directory(request):
         for obj in list(FileNewModel.objects.filter(location__startswith="/" + str(current_absolute_location),
                                                     owner_id=owid)):
             print(obj)
-            result = rename_content_file_directory_in_DB(obj, new_absolute_location)
-            print(result)
+            if not rename_content_file_directory_in_DB(obj, new_absolute_location):
+                raise Exception
 
     except:
         for obj in rec_list:
