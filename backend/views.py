@@ -353,7 +353,8 @@ def rename_directory(request):
         FileNewModel.objects.filter(location__startswith="/" + str(current_absolute_location), owner_id=owid))
 
     try:
-        for obj in FileNewModel.objects.get(location=location, owner_id=owid):
+        for obj in FileNewModel.objects.filter(location__startswith="/" + str(current_absolute_location),
+                                               owner_id=owid):
             if not rename_content_file_directory_in_DB(obj, new_absolute_location):
                 raise Exception
 
