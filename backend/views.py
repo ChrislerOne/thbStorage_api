@@ -341,8 +341,10 @@ def move_file(request):
 
         print(current_absolute_location)
         print(new_absolute_location)
-        print(str(os.sep.join([settings.MEDIA_ROOT, owid, os.sep.join([current_absolute_location])])))
-        print(str(os.sep.join([settings.MEDIA_ROOT, owid, os.sep.join([new_absolute_location])])))
+        print(os.sep.join([settings.MEDIA_ROOT, str(owid)]))
+        print(type(os.sep.join([settings.MEDIA_ROOT, str(owid)])))
+        print(os.sep.join([settings.MEDIA_ROOT, str(owid), current_absolute_location]))
+        print(type(os.sep.join([settings.MEDIA_ROOT, str(owid), current_absolute_location])))
 
         shutil.move(str(os.sep.join([settings.MEDIA_ROOT, owid, str(current_absolute_location)])),
                     str(os.sep.join([settings.MEDIA_ROOT, owid, str(new_absolute_location)])))
