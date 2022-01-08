@@ -61,7 +61,7 @@ def json_from_path(path, uid, user):
     # d = {'name': os.path.basename(path)}
     d = {}
     absolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
-    #print(absolute_path)
+    # print(absolute_path)
     if os.path.isdir(absolute_path):
         try:
             d['type'] = "directory"
@@ -72,7 +72,7 @@ def json_from_path(path, uid, user):
             return Response({'status': 'File not Found'}, status=status.HTTP_404_NOT_FOUND)
     elif os.path.isfile(absolute_path):
         # ansolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
-        #print(os.path.dirname(path))
+        # print(os.path.dirname(path))
         try:
             temp = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(path),
                                             fileName=os.path.basename(path))
@@ -238,8 +238,8 @@ def upload_file(request):
     if serializer.is_valid():
         fileNew.save()
     else:
-        #print(serializer.errors)
-        #print(fileNew.__dict__)
+        # print(serializer.errors)
+        # print(fileNew.__dict__)
         return Response(serializer.errors, status=400)
 
     return Response(status=201)
@@ -349,7 +349,8 @@ def rename_directory(request):
     else:
         return Response(data={'status': 'directory not exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    rec_list = list(FileNewModel.objects.filter(location__startswith="/" + str(current_absolute_location), owner_id=owid))
+    rec_list = list(
+        FileNewModel.objects.filter(location__startswith="/" + str(current_absolute_location), owner_id=owid))
 
     try:
         for obj in FileNewModel.objects.get(location=location, owner_id=owid):
