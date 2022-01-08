@@ -278,7 +278,10 @@ def rename_filename(request):
     os.rename(path, new_file_path)
     file.fileName = newFileName
     file.last_changed = timezone.now()
-    file.content.name = os.sep.join([str(uid), location, newFileName])
+    if location == '/':
+        file.content.name = os.sep.join([str(uid), newFileName])
+    else:
+        file.content.name = os.sep.join([str(uid), location, newFileName])
     file.save()
 
     return Response(data={'status': 'updated'}, status=status.HTTP_200_OK)
