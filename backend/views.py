@@ -339,12 +339,13 @@ def move_file(request):
             current_absolute_location = "/"
             file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
 
-        shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location]),
-                    os.sep.join([settings.MEDIA_ROOT, str(uid), new_absolute_location]))
+        shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
+                    os.sep.join([settings.MEDIA_ROOT, str(uid), new_absolute_location, name]))
         file.location = "/" + str(new_absolute_location)
-        file.content.name = os.sep.join([owid, new_absolute_location])
+        file.content.name = os.sep.join([str(uid), new_absolute_location])
         file.save()
     except ObjectDoesNotExist:
+
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
 
     return Response(status=status.HTTP_200_OK)
