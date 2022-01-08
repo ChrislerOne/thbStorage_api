@@ -4,6 +4,7 @@ import hashlib
 import re
 import string
 import unicodedata
+import shutil
 
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -300,17 +301,13 @@ def delete_file(request):
         name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-
         if len(location) > 0:
             current_absolute_location = os.sep.join(location)
             file = FileNewModel.objects.get(owner_id=owid, location="/" + str(current_absolute_location), fileName=name)
             os.remove(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location, name])]))
         else:
             file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
-            print(location, name)
-            print(os.sep.join([settings.MEDIA_ROOT, uid, name]))
             os.remove(os.sep.join([settings.MEDIA_ROOT, uid, name]))
         file.delete()
     except ObjectDoesNotExist:
