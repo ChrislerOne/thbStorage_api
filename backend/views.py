@@ -305,8 +305,12 @@ def delete_file(request):
         file = FileNewModel.objects.get(owner_id=owid, location=location, fileName=name)
         if len(location) > 0:
             current_absolute_location = os.sep.join(location)
+            print(current_absolute_location, name)
+            print(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location, name])]))
             os.remove(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location, name])]))
         else:
+            print(location, name)
+            print(os.sep.join([settings.MEDIA_ROOT, uid, name]))
             os.remove(os.sep.join([settings.MEDIA_ROOT, uid, name]))
         file.delete()
     except ObjectDoesNotExist:
