@@ -16,6 +16,7 @@ urlpatterns = [
     path('file', views.get_file),
     path('file/specific', views.get_specific_file),
     path('filename/update', views.rename_filename),
+    path('file/delete', views.delete_file),
     path('directory/create', views.create_directory),
     path('directory/update', views.rename_directory),
     # API-Endpoint to obtain user token with cred

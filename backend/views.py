@@ -287,6 +287,34 @@ def rename_filename(request):
     return Response(data={'status': 'updated'}, status=status.HTTP_200_OK)
 
 
+@api_view(['DELETE'])
+def delete_file(request):
+    uid = check_auth(request.GET.get("id_token", ''))
+    try:
+        owid = CustomUIDModel.objects.filter(uid=uid).get().user.pk
+    except ObjectDoesNotExist:
+        return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        upload_data = request.data
+        location = list(upload_data['location'])
+        name = upload_data['name']
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        file = FileNewModel.objects.get(owner_id=owid, location=location, fileName=name)
+        if len(location) > 0:
+            current_absolute_location = os.sep.join(location)
+            os.remove(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location, name])]))
+        else:
+            os.remove(os.sep.join([settings.MEDIA_ROOT, uid, name]))
+        file.delete()
+    except ObjectDoesNotExist:
+        return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(status=status.HTTP_200_OK)
+
+
 @api_view(['GET', 'POST'])
 def create_directory(request):
     uid = check_auth(request.GET.get("id_token", ''))
