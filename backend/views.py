@@ -345,7 +345,7 @@ def rename_directory(request):
     else:
         return Response(data={'status': 'directory not exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    rec_list = FileNewModel.objects.get(location=location, owner_id=owid)
+    rec_list = list(FileNewModel.objects.get(location=location, owner_id=owid))
 
     try:
         for obj in FileNewModel.objects.get(location=location, owner_id=owid):
