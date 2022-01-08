@@ -319,7 +319,8 @@ def rename_content_file_directory_in_DB(obj: FileNewModel, new_location: str):
         obj.save()
         return True
     except:
-        return False
+        return Response(status=status.HTTP_404_NOT_FOUND, data={'status': 'Error while changing db entry!'})
+        # return False
 
 
 @api_view(['GET', 'POST'])
