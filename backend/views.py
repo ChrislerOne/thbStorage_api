@@ -218,13 +218,13 @@ def upload_file(request):
     try:
         fileNew = FileNewModel()
         fileNew.fileName = upload_data['name']
-        fileNew.location = list(upload_data['location'])
+        fileNew.location = upload_data['location'].split(';')
         fileNew.content = upload
         fileNew.checksum = upload_data['checksum']
         fileNew.owner = user
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
-    if len(fileNew.location) > 0:
+    if len(fileNew.location) > 1:
         fileNew_location = os.sep.join(fileNew.location)
     else:
         fileNew_location = "/"
@@ -251,6 +251,7 @@ def upload_file(request):
     else:
         fileNew.content.name = os.sep.join([str(uid), fileName])
 
+    fileNew.location = fileNew_location
     fileNew.fileName = fileName
 
     serializer = FileNewSerializer(data=fileNew.__dict__)
@@ -275,7 +276,7 @@ def rename_filename(request):
         upload_data = request.data
         fileName = upload_data['name']
         newFileName = upload_data['newName']
-        location = list(upload_data['location'])
+        location = upload_data['location'].split(';')
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
