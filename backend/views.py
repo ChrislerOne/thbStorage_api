@@ -110,8 +110,10 @@ def files_list(request):
 @api_view(['GET', 'POST'])
 def files_list_by_path(request):
     uid = check_auth(request.GET.get("id_token", ''))
-
-    user = CustomUIDModel.objects.filter(uid=uid).get().user
+    try:
+        user = CustomUIDModel.objects.filter(uid=uid).get().user
+    except ObjectDoesNotExist:
+        return Response({'status': 'Requested user does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
     try:
         # TODO: CHECK IF IT WORKS
