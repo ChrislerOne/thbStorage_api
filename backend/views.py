@@ -316,7 +316,7 @@ def rename_content_file_directory_in_DB(obj: FileNewModel, new_location: str):
     try:
         uid = CustomUIDModel.objects.filter(user_id=obj.owner.id).get().uid
         obj.content.name = os.sep.join([str(uid), new_location, obj.fileName])
-        obj.location = os.sep.join([new_location, obj.fileName])
+        obj.location = "/" + str(os.sep.join([new_location]))
         obj.save()
         return True
     except Exception as e:
