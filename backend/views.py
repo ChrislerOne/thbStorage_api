@@ -342,7 +342,7 @@ def move_file(request):
         shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
                     os.sep.join([settings.MEDIA_ROOT, str(uid), new_absolute_location, name]))
         file.location = "/" + str(new_absolute_location)
-        file.content.name = os.sep.join([str(uid), new_absolute_location])
+        file.content.name = os.sep.join([str(uid), new_absolute_location, name])
         file.save()
     except ObjectDoesNotExist:
 
