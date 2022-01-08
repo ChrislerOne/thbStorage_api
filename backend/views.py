@@ -61,7 +61,9 @@ def check_auth(id_token):
 def json_from_path(path, uid, user):
     # d = {'name': os.path.basename(path)}
     d = {}
-    absolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
+    # absolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
+    # TODO: CHECK IF IT WORKS
+    absolute_path = os.sep.join([settings.MEDIA_ROOT, uid, path])
     # print(absolute_path)
     if os.path.isdir(absolute_path):
         try:
@@ -112,7 +114,9 @@ def files_list_by_path(request):
     user = CustomUIDModel.objects.filter(uid=uid).get().user
 
     try:
-        filepath = request.data['filepath']
+        # TODO: CHECK IF IT WORKS
+        file_list = list(request.data['filepath'])
+        filepath = "/" + str(os.sep.join(file_list))
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -164,7 +168,9 @@ def get_file(request):
     uid = check_auth(request.GET.get("id_token", ''))
 
     try:
-        filepath = request.data['filepath']
+        # TODO: CHECK IF IT WORKS
+        file_list = list(request.data['filepath'])
+        filepath = "/" + str(os.sep.join(file_list))
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -174,7 +180,9 @@ def get_file(request):
     except ObjectDoesNotExist:
         return Response({'status': 'Requested file does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
-    file = open(f'{settings.MEDIA_ROOT}/{uid}{filepath}', 'r')
+    # file = open(f'{settings.MEDIA_ROOT}/{uid}{filepath}', 'r')
+    # TODO: CHECK IF IT WORKS
+    file = open(os.sep.join([settings.MEDIA_ROOT, uid, filepath]), 'r')
     file.close()
     filename = os.path.basename(file.name)
     # print(temp.fileName)
@@ -193,7 +201,7 @@ def get_file(request):
 @api_view(['POST'])
 def upload_file(request):
     # TODO: Abfrage nach verfügbaren Speicherplatz für User
-
+    # TODO: CHECK IF IT WORKS (BEACHTE fileNew_location WAR EINMAL fileNew.location!!!!!!!!!!!!!)
     try:
         upload = request.FILES['content']
         upload_data = request.data
@@ -208,16 +216,21 @@ def upload_file(request):
     try:
         fileNew = FileNewModel()
         fileNew.fileName = upload_data['name']
-        fileNew.location = upload_data['location']
+        fileNew.location = list(upload_data['location'])
         fileNew.content = upload
         fileNew.checksum = upload_data['checksum']
         fileNew.owner = user
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(fileNew.location) > 0:
+        fileNew_location = os.sep.join(fileNew.location)
+    else:
+        fileNew_location = "/"
 
     fileName = fileNew.content.name.replace(uid, '')
-    if fileNew.location != 'null':
-        fileName = fileName.replace(fileNew.location, '')
+
+    if fileNew_location != 'null':
+        fileName = fileName.replace(fileNew_location, '')
     fileName = fileName.replace('/', '')
 
     ownHash = hashlib.sha1(
@@ -226,13 +239,13 @@ def upload_file(request):
 
     fileName = slugify(fileName)
 
-    if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location, owner_id=user.pk):
+    if FileNewModel.objects.filter(fileName=fileName, location=fileNew_location, owner_id=user.pk):
         rawName = fileName.split('.')
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
         fileName = '.'.join(rawName)
 
-    if fileNew.location != 'null':
-        fileNew.content.name = os.sep.join([str(uid), fileNew.location, fileName])
+    if len(fileNew_location) > 0:
+        fileNew.content.name = os.sep.join([str(uid), fileNew_location, fileName])
     else:
         fileNew.content.name = os.sep.join([str(uid), fileName])
 
@@ -260,13 +273,14 @@ def rename_filename(request):
         upload_data = request.data
         fileName = upload_data['name']
         newFileName = upload_data['newName']
-        location = upload_data['location']
+        location = list(upload_data['location'])
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
+    location = os.sep.join(location)
     try:
-        file = FileNewModel.objects.get(owner_id=owid, location=location, fileName=fileName)
-        if FileNewModel.objects.filter(fileName=newFileName, location=location, owner_id=owid).exists():
+        file = FileNewModel.objects.get(owner_id=owid, location="/" + str(location), fileName=fileName)
+        if FileNewModel.objects.filter(fileName=newFileName, location="/" + str(location), owner_id=owid).exists():
             rawName = newFileName.split('.')
             ownHash = hashlib.sha1(
                 str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
@@ -277,8 +291,11 @@ def rename_filename(request):
     except ObjectDoesNotExist:
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    path = f'{settings.MEDIA_ROOT}/{uid}{location}{fileName}'
-    new_file_path = f'{settings.MEDIA_ROOT}/{uid}{location}{newFileName}'
+    # path = f'{settings.MEDIA_ROOT}/{uid}{location}{fileName}'
+    # new_file_path = f'{settings.MEDIA_ROOT}/{uid}{location}{newFileName}'
+    # TODO: CHECK IF IT WORKS
+    path = os.sep.join([settings.MEDIA_ROOT, uid, location, fileName])
+    new_file_path = os.sep.join([settings.MEDIA_ROOT, uid, location, newFileName])
     os.rename(path, new_file_path)
     file.fileName = newFileName
     file.last_changed = timezone.now()
@@ -363,13 +380,17 @@ def create_directory(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
-        location = upload_data['location']
+        location = list(upload_data['location'])
         name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    path = f'{settings.MEDIA_ROOT}/{uid}{location}'
-    new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}/{name}'
+    location = os.sep.join(location)
+    # TODO: CHECK IF IT WORKS
+    # path = f'{settings.MEDIA_ROOT}/{uid}{location}'
+    # new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}/{name}'
+    path = os.sep.join([settings.MEDIA_ROOT, uid, location])
+    new_dir_path = os.sep.join([settings.MEDIA_ROOT, uid, location, name])
 
     if not os.path.exists(new_dir_path):
         os.makedirs(new_dir_path)
