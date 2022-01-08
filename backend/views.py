@@ -223,7 +223,7 @@ def upload_file(request):
 
     fileName = slugify(fileName)
 
-    if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location, owner_id=user.ok):
+    if FileNewModel.objects.filter(fileName=fileName, location=fileNew.location, owner_id=user.pk):
         rawName = fileName.split('.')
         rawName[0] = str(rawName[0]) + '_' + str(ownHash)
         fileName = '.'.join(rawName)
