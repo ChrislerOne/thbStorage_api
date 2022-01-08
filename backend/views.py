@@ -360,6 +360,7 @@ def rename_directory(request):
     except:
         for obj in rec_list:
             rename_content_file_directory_in_DB(obj, obj.location)
+        os.rename(new_dir_path, path)
         return Response(status=status.HTTP_400_BAD_REQUEST, data={'status': 'Directory name could not be changed!'})
 
     return Response(status=status.HTTP_201_CREATED)
