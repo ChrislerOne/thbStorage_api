@@ -357,7 +357,8 @@ def rename_directory(request):
         for obj in list(FileNewModel.objects.filter(location__startswith="/" + str(current_absolute_location),
                                                     owner_id=owid)):
             print(obj)
-            rename_content_file_directory_in_DB(obj, new_absolute_location)
+            result = rename_content_file_directory_in_DB(obj, new_absolute_location)
+            print(result)
 
     except:
         for obj in rec_list:
