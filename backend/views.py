@@ -316,6 +316,39 @@ def delete_file(request):
     return Response(status=status.HTTP_200_OK)
 
 
+@api_view(['PUT'])
+def move_file(request):
+    uid = check_auth(request.GET.get("id_token", ''))
+    try:
+        owid = CustomUIDModel.objects.filter(uid=uid).get().user.pk
+    except ObjectDoesNotExist:
+        return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        upload_data = request.data
+        location = list(upload_data['location'])
+        newLocation = list(upload_data['newLocation'])
+        name = upload_data['name']
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        new_absolute_location = os.sep.join(newLocation)
+        if len(location) > 0:
+            current_absolute_location = os.sep.join(location)
+            file = FileNewModel.objects.get(owner_id=owid, location="/" + str(current_absolute_location), fileName=name)
+        else:
+            current_absolute_location = "/"
+            file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
+        shutil.move(os.sep.join([settings.MEDIA_ROOT, owid, current_absolute_location]),
+                    os.sep.join([settings.MEDIA_ROOT, owid, new_absolute_location]))
+        file.location = "/" + str(new_absolute_location)
+        file.content.name = os.sep.join([owid, new_absolute_location])
+        file.save()
+    except ObjectDoesNotExist:
+        return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(status=status.HTTP_200_OK)
+
+
 @api_view(['GET', 'POST'])
 def create_directory(request):
     uid = check_auth(request.GET.get("id_token", ''))
