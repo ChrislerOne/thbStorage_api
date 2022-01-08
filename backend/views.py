@@ -334,12 +334,11 @@ def rename_directory(request):
         upload_data = request.data
         location = upload_data['location']
         newLocation = slugify(upload_data['newLocation'])
-        name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    path = f'{settings.MEDIA_ROOT}/{uid}{location}{name}'
-    new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{newLocation}{name}'
+    path = f'{settings.MEDIA_ROOT}/{uid}{location}'
+    new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{newLocation}'
 
     if os.path.exists(path):
         os.rename(path, new_dir_path)
