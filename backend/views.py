@@ -320,7 +320,8 @@ def rename_content_file_directory_in_DB(obj: FileNewModel, new_location: str):
         print(obj)
         obj.save()
         return True
-    except:
+    except Exception as e:
+        print(f'ERROR: {e}')
         return False
         # return False
 
