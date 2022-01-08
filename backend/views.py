@@ -337,19 +337,23 @@ def rename_directory(request):
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    path = f'{settings.MEDIA_ROOT}/{uid}{location}'
-    new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{newLocation}'
+    current_absolute_location = os.sep.join(location)
+    path = os.sep.join([settings.MEDIA_ROOT, uid, current_absolute_location])
+
+    location[-1] = newLocation
+    new_absolute_location = os.sep.join(location)
+    new_dir_path = os.sep.join([settings.MEDIA_ROOT, uid, new_absolute_location])
 
     if os.path.exists(path):
         os.rename(path, new_dir_path)
     else:
         return Response(data={'status': 'directory not exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    rec_list = list(FileNewModel.objects.get(location=location, owner_id=owid))
+    rec_list = list(FileNewModel.objects.get(location__st="/" + str(current_absolute_location), owner_id=owid))
 
     try:
         for obj in FileNewModel.objects.get(location=location, owner_id=owid):
-            if not rename_content_file_directory_in_DB(obj, newLocation):
+            if not rename_content_file_directory_in_DB(obj, new_absolute_location):
                 raise Exception
 
     except:
