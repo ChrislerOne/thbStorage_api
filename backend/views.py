@@ -61,7 +61,7 @@ def json_from_path(path, uid, user):
     # d = {'name': os.path.basename(path)}
     d = {}
     absolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
-    print(absolute_path)
+    #print(absolute_path)
     if os.path.isdir(absolute_path):
         try:
             d['type'] = "directory"
@@ -72,7 +72,7 @@ def json_from_path(path, uid, user):
             return Response({'status': 'File not Found'}, status=status.HTTP_404_NOT_FOUND)
     elif os.path.isfile(absolute_path):
         # ansolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
-        print(os.path.dirname(path))
+        #print(os.path.dirname(path))
         try:
             temp = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(path),
                                             fileName=os.path.basename(path))
@@ -238,8 +238,8 @@ def upload_file(request):
     if serializer.is_valid():
         fileNew.save()
     else:
-        print(serializer.errors)
-        print(fileNew.__dict__)
+        #print(serializer.errors)
+        #print(fileNew.__dict__)
         return Response(serializer.errors, status=400)
 
     return Response(status=201)
