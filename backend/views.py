@@ -339,15 +339,9 @@ def move_file(request):
             current_absolute_location = "/"
             file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
 
-        print(current_absolute_location)
-        print(new_absolute_location)
-        print(os.sep.join([settings.MEDIA_ROOT, str(owid)]))
-        print(type(os.sep.join([settings.MEDIA_ROOT, str(owid)])))
-        print(os.sep.join([settings.MEDIA_ROOT, str(owid), current_absolute_location]))
-        print(type(os.sep.join([settings.MEDIA_ROOT, str(owid), current_absolute_location])))
-
-        shutil.move(str(os.sep.join([settings.MEDIA_ROOT, owid, str(current_absolute_location)])),
-                    str(os.sep.join([settings.MEDIA_ROOT, owid, str(new_absolute_location)])))
+        print(str(owid))
+        shutil.move(os.sep.join([settings.MEDIA_ROOT, str(owid), current_absolute_location]),
+                    os.sep.join([settings.MEDIA_ROOT, str(owid), new_absolute_location]))
         file.location = "/" + str(new_absolute_location)
         file.content.name = os.sep.join([owid, new_absolute_location])
         file.save()
