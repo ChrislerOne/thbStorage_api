@@ -129,7 +129,9 @@ def get_specific_file(request):
     uid = check_auth(request.GET.get("id_token", ''))
 
     try:
-        filepath = request.data['filepath']
+        # TODO: CHECK IF IT WORKS
+        file_list = list(request.data['filepath'])
+        filepath = "/" + str(os.sep.join(file_list))
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -178,7 +180,8 @@ def get_file(request):
     # print(temp.fileName)
     json_data = {
         'fileName': filename,
-        'location': file.name.replace(f'{settings.MEDIA_ROOT}/{uid}', ''),
+        # TODO: CHECK IF IT WORKS
+        'location': file.name.replace(os.sep.join([settings.MEDIA_ROOT, uid]), ''),
         'content': file.name,
         'checksum': temp.checksum,
         'last_changed': temp.last_changed,
