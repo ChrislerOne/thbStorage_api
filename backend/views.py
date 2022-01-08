@@ -306,8 +306,6 @@ def delete_file(request):
         if len(location) > 0:
             current_absolute_location = os.sep.join(location)
             file = FileNewModel.objects.get(owner_id=owid, location="/" + str(current_absolute_location), fileName=name)
-            print(current_absolute_location, name)
-            print(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location, name])]))
             os.remove(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location, name])]))
         else:
             file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
@@ -353,8 +351,7 @@ def rename_content_file_directory_in_DB(obj: FileNewModel, new_location: str):
         obj.location = "/" + str(os.sep.join([new_location]))
         obj.save()
         return True
-    except Exception as e:
-        print(f'ERROR: {e}')
+    except Exception:
         return False
         # return False
 
@@ -392,7 +389,6 @@ def rename_directory(request):
     try:
         for obj in list(FileNewModel.objects.filter(location__startswith="/" + str(current_absolute_location),
                                                     owner_id=owid)):
-            print(obj)
             if not rename_content_file_directory_in_DB(obj, new_absolute_location):
                 raise Exception
 
@@ -403,3 +399,29 @@ def rename_directory(request):
         return Response(status=status.HTTP_400_BAD_REQUEST, data={'status': 'Directory name could not be changed!'})
 
     return Response(status=status.HTTP_201_CREATED)
+
+
+@api_view(['DELETE'])
+def delete_directory(request):
+    uid = check_auth(request.GET.get("id_token", ''))
+    try:
+        owid = CustomUIDModel.objects.filter(uid=uid).get().user.pk
+    except ObjectDoesNotExist:
+        return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        upload_data = request.data
+        location = list(upload_data['location'])
+    except KeyError:
+        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        if len(location) > 0:
+            current_absolute_location = os.sep.join(location)
+            file_list = list(FileNewModel.objects.filter(owner_id=owid, location="/" + str(current_absolute_location)))
+            shutil.rmtree(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location])]))
+            for file in file_list:
+                file.delete()
+    except ObjectDoesNotExist:
+        return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(status=status.HTTP_200_OK)
