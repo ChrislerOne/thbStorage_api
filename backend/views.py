@@ -158,7 +158,7 @@ def get_specific_file(request):
     except FileNotFoundError:
         return Response(data={'status': 'File not Exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    response = FileResponse(file_handle, status=status.HTTP_200_OK, filename='test')
+    response = FileResponse(file_handle, status=status.HTTP_200_OK, filename=name)
     response['Content-Length'] = file.content.size
     response['X-Content-Check.Sum'] = file.checksum
     response['X-Content-File-Name'] = file.fileName
@@ -245,8 +245,11 @@ def upload_file(request):
                :5]
 
     file_name = slugify(file_name)
-
-    if FileNewModel.objects.filter(fileName=file_name, location="/" + str(file_new_location), owner_id=user.pk):
+    if file_new_location != '/':
+        temp_loc = '/' + str(file_new_location)
+    else:
+        temp_loc = '/'
+    if FileNewModel.objects.filter(fileName=file_name, location=temp_loc, owner_id=user.pk):
         raw_name = file_name.split('.')
         raw_name[0] = str(raw_name[0]) + '_' + str(own_hash)
         file_name = '.'.join(raw_name)
