@@ -120,7 +120,7 @@ def files_list_by_path(request):
 
     try:
         # TODO: CHECK IF IT WORKS
-        file_list = list(request.data['filepath'])
+        file_list = request.data['filepath'].split(';')
         filepath = "/" + str(os.sep.join(file_list))
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
