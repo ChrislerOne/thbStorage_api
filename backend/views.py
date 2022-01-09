@@ -203,7 +203,7 @@ def get_file(request):
 @api_view(['POST'])
 def upload_file(request):
     # TODO: Abfrage nach verfügbaren Speicherplatz für User
-    # TODO: CHECK IF IT WORKS (BEACHTE fileNew_location WAR EINMAL fileNew.location!!!!!!!!!!!!!)
+    # TODO: CHECK IF IT WORKS (BEACHTE file_new_location WAR EINMAL file_new.location!!!!!!!!!!!!!)
     try:
         upload = request.FILES['content']
         upload_data = request.data
@@ -216,50 +216,50 @@ def upload_file(request):
     except ObjectDoesNotExist:
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        fileNew = FileNewModel()
-        fileNew.fileName = upload_data['name']
-        fileNew.location = upload_data['location'].split(';')
-        fileNew.content = upload
-        fileNew.checksum = upload_data['checksum']
-        fileNew.owner = user
+        file_new = FileNewModel()
+        file_new.fileName = upload_data['name']
+        file_new.location = upload_data['location'].split(';')
+        file_new.content = upload
+        file_new.checksum = upload_data['checksum']
+        file_new.owner = user
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
-    if len(fileNew.location) > 1:
-        fileNew_location = os.sep.join(fileNew.location)
+    if len(file_new.location) > 0 and file_new.location[0] != '':
+        file_new_location = os.sep.join(file_new.location)
     else:
-        fileNew_location = "/"
+        file_new_location = "/"
 
-    fileName = fileNew.content.name.replace(uid, '')
+    file_name = file_new.content.name.replace(uid, '')
 
-    if fileNew_location != 'null':
-        fileName = fileName.replace(fileNew_location, '')
-    fileName = fileName.replace('/', '')
+    if file_new_location != 'null':
+        file_name = file_name.replace(file_new_location, '')
+    file_name = file_name.replace('/', '')
 
-    ownHash = hashlib.sha1(
+    own_hash = hashlib.sha1(
         str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
               :5]
 
-    fileName = slugify(fileName)
+    file_name = slugify(file_name)
 
-    if FileNewModel.objects.filter(fileName=fileName, location=fileNew_location, owner_id=user.pk):
-        rawName = fileName.split('.')
-        rawName[0] = str(rawName[0]) + '_' + str(ownHash)
-        fileName = '.'.join(rawName)
+    if FileNewModel.objects.filter(fileName=file_name, location=file_new_location, owner_id=user.pk):
+        raw_name = file_name.split('.')
+        raw_name[0] = str(raw_name[0]) + '_' + str(own_hash)
+        file_name = '.'.join(raw_name)
 
-    if len(fileNew_location) > 0:
-        fileNew.content.name = os.sep.join([str(uid), fileNew_location, fileName])
+    if len(file_new_location) > 0:
+        file_new.content.name = os.sep.join([str(uid), file_new_location, file_name])
     else:
-        fileNew.content.name = os.sep.join([str(uid), fileName])
+        file_new.content.name = os.sep.join([str(uid), file_name])
 
-    fileNew.location = fileNew_location
-    fileNew.fileName = fileName
+    file_new.location = file_new_location
+    file_new.fileName = file_name
 
-    serializer = FileNewSerializer(data=fileNew.__dict__)
+    serializer = FileNewSerializer(data=file_new.__dict__)
     if serializer.is_valid():
-        fileNew.save()
+        file_new.save()
     else:
         # print(serializer.errors)
-        # print(fileNew.__dict__)
+        # print(file_new.__dict__)
         return Response(serializer.errors, status=400)
 
     return Response(status=201)
@@ -274,38 +274,38 @@ def rename_filename(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
-        fileName = upload_data['name']
-        newFileName = upload_data['newName']
+        file_name = upload_data['name']
+        new_file_name = upload_data['newName']
         location = upload_data['location'].split(';')
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     location = os.sep.join(location)
     try:
-        file = FileNewModel.objects.get(owner_id=owid, location="/" + str(location), fileName=fileName)
-        if FileNewModel.objects.filter(fileName=newFileName, location="/" + str(location), owner_id=owid).exists():
-            rawName = newFileName.split('.')
-            ownHash = hashlib.sha1(
+        file = FileNewModel.objects.get(owner_id=owid, location="/" + str(location), fileName=file_name)
+        if FileNewModel.objects.filter(fileName=new_file_name, location="/" + str(location), owner_id=owid).exists():
+            raw_name = new_file_name.split('.')
+            own_hash = hashlib.sha1(
                 str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
                       :10]
-            rawName[0] = str(rawName[0]) + str(ownHash)
-            newFileName = slugify('.'.join(rawName))
+            raw_name[0] = str(raw_name[0]) + str(own_hash)
+            new_file_name = slugify('.'.join(raw_name))
 
     except ObjectDoesNotExist:
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
 
     # path = f'{settings.MEDIA_ROOT}/{uid}{location}{fileName}'
-    # new_file_path = f'{settings.MEDIA_ROOT}/{uid}{location}{newFileName}'
+    # new_file_path = f'{settings.MEDIA_ROOT}/{uid}{location}{new_file_name}'
     # TODO: CHECK IF IT WORKS
-    path = os.sep.join([settings.MEDIA_ROOT, uid, location, fileName])
-    new_file_path = os.sep.join([settings.MEDIA_ROOT, uid, location, newFileName])
+    path = os.sep.join([settings.MEDIA_ROOT, uid, location, file_name])
+    new_file_path = os.sep.join([settings.MEDIA_ROOT, uid, location, new_file_name])
     os.rename(path, new_file_path)
-    file.fileName = newFileName
+    file.fileName = new_file_name
     file.last_changed = timezone.now()
     if location == '/':
-        file.content.name = os.sep.join([str(uid), newFileName])
+        file.content.name = os.sep.join([str(uid), new_file_name])
     else:
-        file.content.name = os.sep.join([str(uid), location, newFileName])
+        file.content.name = os.sep.join([str(uid), location, new_file_name])
     file.save()
 
     return Response(data={'status': 'updated'}, status=status.HTTP_200_OK)
