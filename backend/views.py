@@ -69,7 +69,7 @@ def json_from_path(path, uid, user):
         try:
             d['type'] = "directory"
             d['location'] = path
-            d['name'] = os.path.basename(path).replace(uid, '')
+            d['name'] = uid
             d['children'] = [json_from_path(os.path.join(path, x), uid, user) for x in os.listdir(absolute_path)]
         except FileNotFoundError:
             return Response({'status': 'File not Found'}, status=status.HTTP_404_NOT_FOUND)
