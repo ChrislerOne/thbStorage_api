@@ -239,7 +239,7 @@ def upload_file(request):
 
     own_hash = hashlib.sha1(
         str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
-              :5]
+               :5]
 
     file_name = slugify(file_name)
 
@@ -253,7 +253,10 @@ def upload_file(request):
     else:
         file_new.content.name = os.sep.join([str(uid), file_name])
 
-    file_new.location = "/" + str(file_new_location)
+    if file_new_location != '/':
+        file_new.location = "/" + str(file_new_location)
+    else:
+        file_new.location = str(file_new_location)
     file_new.fileName = file_name
 
     serializer = FileNewSerializer(data=file_new.__dict__)
@@ -289,7 +292,7 @@ def rename_filename(request):
             raw_name = new_file_name.split('.')
             own_hash = hashlib.sha1(
                 str(random.choices(string.ascii_uppercase + string.digits, k=10)).encode("UTF-8")).hexdigest()[
-                      :10]
+                       :10]
             raw_name[0] = str(raw_name[0]) + str(own_hash)
             new_file_name = slugify('.'.join(raw_name))
 
