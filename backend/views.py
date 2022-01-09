@@ -96,8 +96,10 @@ def json_from_path(path, uid, user):
 @api_view(['GET'])
 def files_list(request):
     uid = check_auth(request.GET.get("id_token", ''))
-
-    user = CustomUIDModel.objects.filter(uid=uid).get().user
+    try:
+        user = CustomUIDModel.objects.filter(uid=uid).get().user
+    except ObjectDoesNotExist:
+        return Response({'status': 'Requested user does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
     json_data = json_from_path('/', uid, user)
 
