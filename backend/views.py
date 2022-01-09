@@ -142,7 +142,7 @@ def get_specific_file(request):
         file_list = request.data['filepath'].split(';')
         name = request.data['name']
         filepath = str(os.sep.join(file_list))
-        location = filepath.replace(name,'')[:-1]
+        location = filepath.replace(name, '')[:-1]
         if location == '':
             location = '/'
     except KeyError:
@@ -396,7 +396,7 @@ def create_directory(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
-        location = list(upload_data['location'])
+        location = upload_data['location'].split(';')
         name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
