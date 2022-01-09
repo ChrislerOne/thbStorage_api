@@ -251,7 +251,7 @@ def upload_file(request):
     else:
         file_new.content.name = os.sep.join([str(uid), file_name])
 
-    file_new.location = file_new_location
+    file_new.location = "/" + str(file_new_location)
     file_new.fileName = file_name
 
     serializer = FileNewSerializer(data=file_new.__dict__)
