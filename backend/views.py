@@ -172,39 +172,39 @@ def get_specific_file(request):
     return response
 
 
-@api_view(['GET', 'POST'])
-def get_file(request):
-    uid = check_auth(request.GET.get("id_token", ''))
-
-    try:
-        # TODO: CHECK IF IT WORKS
-        file_list = list(request.data['filepath'])
-        filepath = "/" + str(os.sep.join(file_list))
-    except KeyError:
-        return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
-
-    user = CustomUIDModel.objects.filter(uid=uid).get().user
-    try:
-        temp = FileNewModel.objects.get(owner_id=user.pk, content=f'{uid}{filepath}')
-    except ObjectDoesNotExist:
-        return Response({'status': 'Requested file does not exist!'}, status=status.HTTP_404_NOT_FOUND)
-
-    # file = open(f'{settings.MEDIA_ROOT}/{uid}{filepath}', 'r')
-    # TODO: CHECK IF IT WORKS
-    file = open(os.sep.join([settings.MEDIA_ROOT, uid, filepath]), 'r')
-    file.close()
-    filename = os.path.basename(file.name)
-    # print(temp.fileName)
-    json_data = {
-        'fileName': filename,
-        # TODO: CHECK IF IT WORKS
-        'location': file.name.replace(os.sep.join([settings.MEDIA_ROOT, uid]), ''),
-        'content': file.name,
-        'checksum': temp.checksum,
-        'last_changed': temp.last_changed,
-        'isPublic': temp.isPublic,
-    }
-    return Response(data=json_data, status=status.HTTP_200_OK)
+# @api_view(['GET', 'POST'])
+# def get_file(request):
+#     uid = check_auth(request.GET.get("id_token", ''))
+#
+#     try:
+#         # TODO: CHECK IF IT WORKS
+#         file_list = list(request.data['filepath'])
+#         filepath = "/" + str(os.sep.join(file_list))
+#     except KeyError:
+#         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
+#
+#     user = CustomUIDModel.objects.filter(uid=uid).get().user
+#     try:
+#         temp = FileNewModel.objects.get(owner_id=user.pk, content=f'{uid}{filepath}')
+#     except ObjectDoesNotExist:
+#         return Response({'status': 'Requested file does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+#
+#     # file = open(f'{settings.MEDIA_ROOT}/{uid}{filepath}', 'r')
+#     # TODO: CHECK IF IT WORKS
+#     file = open(os.sep.join([settings.MEDIA_ROOT, uid, filepath]), 'r')
+#     file.close()
+#     filename = os.path.basename(file.name)
+#     # print(temp.fileName)
+#     json_data = {
+#         'fileName': filename,
+#         # TODO: CHECK IF IT WORKS
+#         'location': file.name.replace(os.sep.join([settings.MEDIA_ROOT, uid]), ''),
+#         'content': file.name,
+#         'checksum': temp.checksum,
+#         'last_changed': temp.last_changed,
+#         'isPublic': temp.isPublic,
+#     }
+#     return Response(data=json_data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -333,7 +333,10 @@ def delete_file(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
-        location = list(upload_data['location'])
+        # TODO Check if it works
+        #location = list(upload_data['location'])
+        file_list = request.data['location'].split(';')
+        location = "/" + str(os.sep.join(file_list))
         name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
@@ -361,7 +364,10 @@ def move_file(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
-        location = list(upload_data['location'])
+        # TODO check if it works
+        #location = list(upload_data['location'])
+        file_list = request.data['location'].split(';')
+        location = "/" + str(os.sep.join(file_list))
         newLocation = list(upload_data['newLocation'])
         name = upload_data['name']
     except KeyError:
@@ -396,7 +402,10 @@ def create_directory(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
-        location = upload_data['location'].split(';')
+        #TODO Check if if works
+        #location = upload_data['location'].split(';')
+        file_list = request.data['location'].split(';')
+        location = "/" + str(os.sep.join(file_list))
         name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
@@ -438,7 +447,10 @@ def rename_directory(request):
 
     try:
         upload_data = request.data
-        location = list(upload_data['location'])
+        # TODO checks if is works
+        #location = list(upload_data['location'])
+        file_list = request.data['location'].split(';')
+        location = "/" + str(os.sep.join(file_list))
         newLocation = slugify(upload_data['newLocation'])
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
@@ -482,7 +494,10 @@ def delete_directory(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
-        location = list(upload_data['location'])
+        # TODO check if is works
+        #location = list(upload_data['location'])
+        file_list = request.data['location'].split(';')
+        location = "/" + str(os.sep.join(file_list))
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
