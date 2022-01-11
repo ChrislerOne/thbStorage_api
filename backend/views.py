@@ -142,9 +142,8 @@ def get_specific_file(request):
         file_list = request.data['filepath'].split(';')
         name = request.data['name']
         filepath = str(os.sep.join(file_list))
-        location = filepath.replace(name, '')
+        location = "/" + filepath.replace(name, '')
         if location == '':
-            location = filepath.replace(name, '')[:-1]
             location = '/'
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
@@ -155,7 +154,7 @@ def get_specific_file(request):
         print(filepath)
         print(location)
         user = CustomUIDModel.objects.filter(uid=uid).get().user
-        file = FileNewModel.objects.get(owner_id=user.pk, location="/" + location,
+        file = FileNewModel.objects.get(owner_id=user.pk, location=location,
                                         fileName=name)
     except FileNewModel.DoesNotExist:
         return Response(data={'status': 'File not Exist'}, status=status.HTTP_404_NOT_FOUND)
