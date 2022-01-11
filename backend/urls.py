@@ -24,5 +24,4 @@ urlpatterns = [
 
     # API-Endpoint to obtain user token with cred
     path('api-token-auth/', v.obtain_auth_token)
-
 ]

@@ -150,7 +150,7 @@ def get_specific_file(request):
 
     try:
         user = CustomUIDModel.objects.filter(uid=uid).get().user
-        file = FileNewModel.objects.get(owner_id=user.pk, location=location,
+        file = FileNewModel.objects.get(owner_id=user.pk, location="/" + location,
                                         fileName=name)
     except FileNewModel.DoesNotExist:
         return Response(data={'status': 'File not Exist'}, status=status.HTTP_404_NOT_FOUND)
