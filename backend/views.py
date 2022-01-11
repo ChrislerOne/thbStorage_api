@@ -142,7 +142,7 @@ def get_specific_file(request):
         file_list = request.data['filepath'].split(';')
         name = request.data['name']
         filepath = str(os.sep.join(file_list))
-        location = filepath.replace(name, '')[:-1]
+        location = filepath.replace(name, '')
         if location == '':
             location = '/'
     except KeyError:
