@@ -150,6 +150,10 @@ def get_specific_file(request):
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
+        print(file_list)
+        print(name)
+        print(filepath)
+        print(location)
         user = CustomUIDModel.objects.filter(uid=uid).get().user
         file = FileNewModel.objects.get(owner_id=user.pk, location="/" + location,
                                         fileName=name)
