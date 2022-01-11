@@ -334,15 +334,15 @@ def delete_file(request):
     try:
         upload_data = request.data
         # TODO Check if it works
-        #location = list(upload_data['location'])
+        # location = list(upload_data['location'])
         file_list = request.data['location'].split(';')
-        location = "/" + str(os.sep.join(file_list))
+        # location = '/' + str(os.sep.join(file_list))
         name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        if len(location) > 0:
-            current_absolute_location = os.sep.join(location)
+        if len(file_list) > 0 and file_list[0] != '':
+            current_absolute_location = os.sep.join(file_list)
             file = FileNewModel.objects.get(owner_id=owid, location="/" + str(current_absolute_location), fileName=name)
             os.remove(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location, name])]))
         else:
@@ -365,7 +365,7 @@ def move_file(request):
     try:
         upload_data = request.data
         # TODO check if it works
-        #location = list(upload_data['location'])
+        # location = list(upload_data['location'])
         file_list = request.data['location'].split(';')
         location = "/" + str(os.sep.join(file_list))
         newLocation = list(upload_data['newLocation'])
@@ -402,8 +402,8 @@ def create_directory(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         upload_data = request.data
-        #TODO Check if if works
-        #location = upload_data['location'].split(';')
+        # TODO Check if if works
+        # location = upload_data['location'].split(';')
         file_list = request.data['location'].split(';')
         location = "/" + str(os.sep.join(file_list))
         name = upload_data['name']
@@ -448,7 +448,7 @@ def rename_directory(request):
     try:
         upload_data = request.data
         # TODO checks if is works
-        #location = list(upload_data['location'])
+        # location = list(upload_data['location'])
         file_list = request.data['location'].split(';')
         location = "/" + str(os.sep.join(file_list))
         newLocation = slugify(upload_data['newLocation'])
@@ -495,7 +495,7 @@ def delete_directory(request):
     try:
         upload_data = request.data
         # TODO check if is works
-        #location = list(upload_data['location'])
+        # location = list(upload_data['location'])
         file_list = request.data['location'].split(';')
         location = "/" + str(os.sep.join(file_list))
     except KeyError:
