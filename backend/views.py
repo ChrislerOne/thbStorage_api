@@ -144,6 +144,7 @@ def get_specific_file(request):
         filepath = str(os.sep.join(file_list))
         location = filepath.replace(name, '')
         if location == '':
+            location = filepath.replace(name, '')[:-1]
             location = '/'
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
