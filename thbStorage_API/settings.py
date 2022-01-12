@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'backend',
     'rest_framework',
     'rest_framework.authtoken',
-    'corsheaders'
+    "rest_framework_api_key",
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -138,9 +139,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_ROOT = os.environ.get("MEDIA_ROOT")
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES':
-        ['rest_framework.authentication.TokenAuthentication',
-         ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework_api_key.permissions.HasAPIKey",
+    ]
 }
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
