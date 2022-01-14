@@ -382,16 +382,20 @@ def move_file(request):
             file = FileNewModel.objects.get(owner_id=owid, location="/" + str(location), fileName=name)
             shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
                         os.sep.join([settings.MEDIA_ROOT, str(uid), newLocation, name]))
-            file.content.name = os.sep.join([str(uid), newLocation, name])
-            file.location = "/" + newLocation
+
 
         else:
             current_absolute_location = "/"
             file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
             shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
                         os.sep.join([settings.MEDIA_ROOT, str(uid), name]))
+
+        if newLocation == '':
             file.content.name = os.sep.join([str(uid), name])
             file.location = "/"
+        else:
+            file.content.name = os.sep.join([str(uid), newLocation, name])
+            file.location = "/" + newLocation
 
         file.save()
     except ObjectDoesNotExist:
