@@ -502,7 +502,7 @@ def delete_directory(request):
 
     try:
         if len(file_list) > 0 and file_list[0] != '':
-            file_list = list(FileNewModel.objects.filter(owner_id=owid, location__startswith=str(location)).get())
+            file_list = list(FileNewModel.objects.filter(owner_id=owid, location__startswith=str(location)))
             shutil.rmtree(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([location])]))
             print(file_list)
             for file in file_list:
