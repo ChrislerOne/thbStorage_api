@@ -388,7 +388,7 @@ def move_file(request):
                             os.sep.join([settings.MEDIA_ROOT, str(uid), newLocation, name]))
         else:
             file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
-            shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid)]),
+            shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), name]),
                         os.sep.join([settings.MEDIA_ROOT, str(uid), newLocation, name]))
 
         if newLocation == '':
