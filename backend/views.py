@@ -380,15 +380,16 @@ def move_file(request):
         if len(location_list) > 0 and location_list[0] != '':
             current_absolute_location = location
             file = FileNewModel.objects.get(owner_id=owid, location="/" + str(location), fileName=name)
-            shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
-                        os.sep.join([settings.MEDIA_ROOT, str(uid), newLocation, name]))
-
-
+            if newLocation == '':
+                shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
+                            os.sep.join([settings.MEDIA_ROOT, str(uid), name]))
+            else:
+                shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
+                            os.sep.join([settings.MEDIA_ROOT, str(uid), newLocation, name]))
         else:
-            current_absolute_location = "/"
             file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
-            shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
-                        os.sep.join([settings.MEDIA_ROOT, str(uid), name]))
+            shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid)]),
+                        os.sep.join([settings.MEDIA_ROOT, str(uid), newLocation, name]))
 
         if newLocation == '':
             file.content.name = os.sep.join([str(uid), name])
