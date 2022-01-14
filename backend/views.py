@@ -446,19 +446,16 @@ def rename_directory(request):
 
     try:
         upload_data = request.data
-        # TODO checks if is works
-        # location = list(upload_data['location'])
-        file_list = request.data['location'].split(';')
-        location = "/" + str(os.sep.join(file_list))
+        location_list = request.data['location'].split(';')
         newLocation = slugify(upload_data['newLocation'])
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    current_absolute_location = os.sep.join(location)
+    current_absolute_location = os.sep.join(location_list)
     path = os.sep.join([settings.MEDIA_ROOT, uid, current_absolute_location])
 
-    location[-1] = newLocation
-    new_absolute_location = os.sep.join(location)
+    location_list[-1] = newLocation
+    new_absolute_location = os.sep.join(location_list)
     new_dir_path = os.sep.join([settings.MEDIA_ROOT, uid, new_absolute_location])
 
     if os.path.exists(path):
