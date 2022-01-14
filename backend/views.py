@@ -504,7 +504,9 @@ def delete_directory(request):
         if len(file_list) > 0 and file_list[0] != '':
             file_list = list(FileNewModel.objects.filter(owner_id=owid, location="/" + str(location)))
             shutil.rmtree(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([location])]))
+            print(file_list)
             for file in file_list:
+                print(file.fileName)
                 file.delete()
         else:
             return Response({'status': 'Parameters are not correct. Please check!'}, status=status.HTTP_400_BAD_REQUEST)
