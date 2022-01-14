@@ -34,7 +34,7 @@ def slugify(value, allow_unicode=False):
         value = unicodedata.normalize('NFKC', value)
     else:
         value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
-    value = re.sub(r'[^\w\s\.-]', '', value).strip()
+    value = re.sub(r'[^\w\s.-]', '', value).strip()
     return re.sub(r'[-\s]+', '_', value)
 
 
@@ -429,7 +429,7 @@ def create_directory(request):
     return Response(status=status.HTTP_201_CREATED)
 
 
-def rename_content_file_directory_in_DB(obj: FileNewModel, new_location: str):
+def rename_content_file_directory_in_db(obj: FileNewModel, new_location: str):
     try:
         uid = CustomUIDModel.objects.filter(user_id=obj.owner.id).get().uid
         obj.content.name = os.sep.join([str(uid), new_location, obj.fileName])
@@ -477,12 +477,12 @@ def rename_directory(request):
     try:
         for obj in list(FileNewModel.objects.filter(location__startswith="/" + str(current_absolute_location),
                                                     owner_id=owid)):
-            if not rename_content_file_directory_in_DB(obj, new_absolute_location):
+            if not rename_content_file_directory_in_db(obj, new_absolute_location):
                 raise Exception
 
     except:
         for obj in rec_list:
-            rename_content_file_directory_in_DB(obj, obj.location)
+            rename_content_file_directory_in_db(obj, obj.location)
         os.rename(new_dir_path, path)
         return Response(status=status.HTTP_400_BAD_REQUEST, data={'status': 'Directory name could not be changed!'})
 
@@ -497,21 +497,22 @@ def delete_directory(request):
     except ObjectDoesNotExist:
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        upload_data = request.data
-        # TODO check if is works
-        # location = list(upload_data['location'])
-        file_list = request.data['location'].split(';')
-        location = "/" + str(os.sep.join(file_list))
+        # "test"
+        file_list = request.data['location'].split(';')  # ['test']
+        location = "/" + str(os.sep.join(file_list))  # --> '/test'
+        print(location)
+        print(file_list)
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        if len(location) > 0:
-            current_absolute_location = os.sep.join(location)
-            file_list = list(FileNewModel.objects.filter(owner_id=owid, location="/" + str(current_absolute_location)))
-            shutil.rmtree(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([current_absolute_location])]))
+        if len(file_list) > 0 and file_list[0] != '':
+            file_list = list(FileNewModel.objects.filter(owner_id=owid, location="/" + str(location)))
+            shutil.rmtree(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([location])]))
             for file in file_list:
                 file.delete()
+        else:
+            return Response({'status': 'Parameters are not correct. Please check!'}, status=status.HTTP_400_BAD_REQUEST)
     except ObjectDoesNotExist:
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
 
