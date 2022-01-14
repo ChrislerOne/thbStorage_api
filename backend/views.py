@@ -492,7 +492,6 @@ def delete_directory(request):
     except ObjectDoesNotExist:
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        # "test"
         file_list = request.data['location'].split(';')  # ['test']
         location = str(os.sep.join(file_list))  # --> '/test'
         print(location)
@@ -502,7 +501,8 @@ def delete_directory(request):
 
     try:
         if len(file_list) > 0 and file_list[0] != '':
-            file_list = list(FileNewModel.objects.filter(owner_id=owid, location__startswith=str(location)))
+            file_list = list(FileNewModel.objects.filter(owner_id=owid, location__startswith=location).filter(
+                content__contains=location + "/"))
             shutil.rmtree(os.sep.join([settings.MEDIA_ROOT, uid, os.sep.join([location])]))
             print(file_list)
             for file in file_list:
