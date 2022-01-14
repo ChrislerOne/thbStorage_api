@@ -383,6 +383,7 @@ def move_file(request):
             shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
                         os.sep.join([settings.MEDIA_ROOT, str(uid), newLocation, name]))
             file.content.name = os.sep.join([str(uid), newLocation, name])
+            file.location = "/" + newLocation
 
         else:
             current_absolute_location = "/"
@@ -390,8 +391,8 @@ def move_file(request):
             shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
                         os.sep.join([settings.MEDIA_ROOT, str(uid), name]))
             file.content.name = os.sep.join([str(uid), name])
+            file.location = "/"
 
-        file.location = "/" + str(newLocation)
         file.save()
     except ObjectDoesNotExist:
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
