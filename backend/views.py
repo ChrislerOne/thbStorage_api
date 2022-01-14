@@ -409,16 +409,11 @@ def create_directory(request):
         # TODO Check if if works
         # location = upload_data['location'].split(';')
         file_list = request.data['location'].split(';')
-        location = "/" + str(os.sep.join(file_list))
+        location = str(os.sep.join(file_list))
         name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
-    location = os.sep.join(location)
-    # TODO: CHECK IF IT WORKS
-    # path = f'{settings.MEDIA_ROOT}/{uid}{location}'
-    # new_dir_path = f'{settings.MEDIA_ROOT}/{uid}{location}/{name}'
-    path = os.sep.join([settings.MEDIA_ROOT, uid, location])
     new_dir_path = os.sep.join([settings.MEDIA_ROOT, uid, location, name])
 
     if not os.path.exists(new_dir_path):
