@@ -370,30 +370,31 @@ def move_file(request):
         upload_data = request.data
         # TODO check if it works
         # location = list(upload_data['location'])
-        file_list = request.data['location'].split(';')
-        location = "/" + str(os.sep.join(file_list))
-        newLocation = list(upload_data['newLocation'])
+        location_list = request.data['location'].split(';')
+        location = str(os.sep.join(location_list))
+        newLocation = str(os.sep.join(upload_data['newLocation'].split(';')))
         name = upload_data['name']
     except KeyError:
         return Response({'status': 'missing parameter'}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        new_absolute_location = os.sep.join(newLocation)
-        if len(location) > 0:
-            current_absolute_location = os.sep.join(location)
-            file = FileNewModel.objects.get(owner_id=owid, location="/" + str(current_absolute_location), fileName=name)
+        if len(location_list) > 0 and location_list[0] != '':
+            current_absolute_location = location
+            file = FileNewModel.objects.get(owner_id=owid, location="/" + str(location), fileName=name)
+            shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
+                        os.sep.join([settings.MEDIA_ROOT, str(uid), newLocation, name]))
+            file.content.name = os.sep.join([str(uid), newLocation, name])
+
         else:
             current_absolute_location = "/"
             file = FileNewModel.objects.get(owner_id=owid, location="/", fileName=name)
+            shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
+                        os.sep.join([settings.MEDIA_ROOT, str(uid), name]))
+            file.content.name = os.sep.join([str(uid), name])
 
-        shutil.move(os.sep.join([settings.MEDIA_ROOT, str(uid), current_absolute_location, name]),
-                    os.sep.join([settings.MEDIA_ROOT, str(uid), new_absolute_location, name]))
-        file.location = "/" + str(new_absolute_location)
-        file.content.name = os.sep.join([str(uid), new_absolute_location, name])
+        file.location = "/" + str(newLocation)
         file.save()
     except ObjectDoesNotExist:
-
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
-
     return Response(status=status.HTTP_200_OK)
 
 
