@@ -494,7 +494,7 @@ def delete_directory(request):
     try:
         # "test"
         file_list = request.data['location'].split(';')  # ['test']
-        location = "/" + str(os.sep.join(file_list))  # --> '/test'
+        location = str(os.sep.join(file_list))  # --> '/test'
         print(location)
         print(file_list)
     except KeyError:
