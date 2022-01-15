@@ -413,7 +413,7 @@ def get_all_directories_from_user(request):
         return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        dirs_list = FileNewModel.objects.values_list('location', flat=True).distinct()
+        dirs_list = FileNewModel.objects.filter(owner_id=owid).values_list('location', flat=True).distinct()
     except ObjectDoesNotExist:
         return Response({'status': 'User got not entries!'}, status=status.HTTP_400_BAD_REQUEST)
 
