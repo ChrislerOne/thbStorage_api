@@ -21,7 +21,7 @@ urlpatterns = [
     path('directory/create', views.create_directory),
     path('directory/update', views.rename_directory),
     path('directory/delete', views.delete_directory),
-
+    path('directory/list', views.get_all_directories_from_user),
     # API-Endpoint to obtain user token with cred
     path('api-token-auth/', v.obtain_auth_token)
 ]

@@ -404,6 +404,22 @@ def move_file(request):
     return Response(status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+def get_all_directories_from_user(request):
+    uid = check_auth(request.GET.get("id_token", ''))
+    try:
+        owid = CustomUIDModel.objects.filter(uid=uid).get().user.pk
+    except ObjectDoesNotExist:
+        return Response({'status': 'User not exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        dirs_list = FileNewModel.objects.values_list('location', flat=True).distinct()
+    except ObjectDoesNotExist:
+        return Response({'status': 'User got not entries!'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(data=dirs_list, status=status.HTTP_200_OK)
+
+
 @api_view(['GET', 'POST'])
 def create_directory(request):
     uid = check_auth(request.GET.get("id_token", ''))
