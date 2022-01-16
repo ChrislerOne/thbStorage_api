@@ -44,7 +44,6 @@ def create_user_if_not_existent(uid: str):
         uid_obj = CustomUIDModel.objects.get(uid=firebase_user.uid)
         user = uid_obj.user
     else:
-        # User Object neccesary for token creation
         user = User.objects.create(email=firebase_user.email, username=firebase_user.email,
                                    password=str(str(random.randbytes(14))))
         CustomUIDModel.objects.create(uid=firebase_user.uid, user=user)
@@ -59,12 +58,8 @@ def check_auth(id_token):
 
 
 def json_from_path(path, uid, user):
-    # d = {'name': os.path.basename(path)}
     d = {}
-    # absolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
-    # TODO: CHECK IF IT WORKS
     absolute_path = os.sep.join([settings.MEDIA_ROOT, uid, path])
-    # print(absolute_path)
     if os.path.isdir(absolute_path):
         try:
             d['type'] = "directory"
@@ -74,8 +69,6 @@ def json_from_path(path, uid, user):
         except FileNotFoundError:
             return Response({'status': 'File not Found'}, status=status.HTTP_404_NOT_FOUND)
     elif os.path.isfile(absolute_path):
-        # ansolute_path = f'{settings.MEDIA_ROOT}/{uid}{path}'
-        # print(os.path.dirname(path))
         try:
             temp = FileNewModel.objects.get(owner_id=user.pk, location=os.path.dirname(path),
                                             fileName=os.path.basename(path))
@@ -97,8 +90,23 @@ def json_from_path(path, uid, user):
 @api_view(['GET'])
 def files_list(request):
     uid = check_auth(request.GET.get("id_token", ''))
+    fb_user = get_user(uid)
     try:
-        user = CustomUIDModel.objects.filter(uid=uid).get().user
+        if CustomUIDModel.objects.filter(uid=uid).exists():
+            user = CustomUIDModel.objects.filter(uid=uid).get().user
+        else:
+            # USER OBJECT ERSTELLEN --> UID USER ABHÄNGIG VON USER
+            user = User()
+            user.email = fb_user.email
+            user.username = fb_user.email
+            user.password = slugify(fb_user.email)
+            user.save()
+
+            # UID USER ERSTELLEN
+            uid_user = CustomUIDModel()
+            uid_user.uid = uid
+            uid_user.user = user
+            uid_user.save()
     except ObjectDoesNotExist:
         return Response({'status': 'Requested user does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -113,8 +121,23 @@ def files_list(request):
 @api_view(['GET', 'POST'])
 def files_list_by_path(request):
     uid = check_auth(request.GET.get("id_token", ''))
+    fb_user = get_user(uid)
     try:
-        user = CustomUIDModel.objects.filter(uid=uid).get().user
+        if CustomUIDModel.objects.filter(uid=uid).exists():
+            user = CustomUIDModel.objects.filter(uid=uid).get().user
+        else:
+            # USER OBJECT ERSTELLEN --> UID USER ABHÄNGIG VON USER
+            user = User()
+            user.email = fb_user.email
+            user.username = fb_user.email
+            user.password = slugify(fb_user.email)
+            user.save()
+
+            # UID USER ERSTELLEN
+            uid_user = CustomUIDModel()
+            uid_user.uid = uid
+            uid_user.user = user
+            uid_user.save()
     except ObjectDoesNotExist:
         return Response({'status': 'Requested user does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -213,8 +236,6 @@ def get_specific_file(request):
 
 @api_view(['POST'])
 def upload_file(request):
-    # TODO: Abfrage nach verfügbaren Speicherplatz für User
-    # TODO: CHECK IF IT WORKS (BEACHTE file_new_location WAR EINMAL file_new.location!!!!!!!!!!!!!)
     try:
         upload = request.FILES['content']
         upload_data = request.data
@@ -275,8 +296,6 @@ def upload_file(request):
     if serializer.is_valid():
         file_new.save()
     else:
-        # print(serializer.errors)
-        # print(file_new.__dict__)
         return Response(serializer.errors, status=400)
 
     return Response(status=201)
@@ -311,9 +330,6 @@ def rename_filename(request):
     except ObjectDoesNotExist:
         return Response(data={'status': 'File not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    # path = f'{settings.MEDIA_ROOT}/{uid}{location}{fileName}'
-    # new_file_path = f'{settings.MEDIA_ROOT}/{uid}{location}{new_file_name}'
-    # TODO: CHECK IF IT WORKS
     path = os.sep.join([settings.MEDIA_ROOT, uid, location, file_name])
     new_file_path = os.sep.join([settings.MEDIA_ROOT, uid, location, new_file_name])
     os.rename(path, new_file_path)
